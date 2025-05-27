@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet } from '@codemirror/view';
 import { python } from '@codemirror/lang-python';
-import { StateField, StateEffect, Transaction, Range, RangeSetBuilder } from '@codemirror/state';
+import { StateField, StateEffect, Transaction, RangeSetBuilder, Facet } from '@codemirror/state';
 
 import { useHoverStore } from '@/lib/hoverStore';
 import { useCodeAnalysisStore } from '@/lib/codeAnalysisStore';
@@ -14,6 +14,8 @@ import { Panel } from './ui/Panel';
 import { fullPythonCode } from '@/constants/pythonCode';
 import { useThemeStore } from '@/lib/themeStore';
 import { createHighlightMap } from '@/lib/codeHighlightingUtils'; // 导入新的工具函数
+import { dynamicHighlightExtension, highlightedLines } from '../lib/highlightExtension'; // 导入实际导出的扩展和 Facet
+import { hideTagsExtension } from '../lib/hideTagsExtension.js'; // 导入新扩展
 
 interface CodePanelProps {}
 
@@ -50,7 +52,6 @@ const highlightField = StateField.define<DecorationSet>({
     // 应用来自 transaction 的更改到现有装饰 (对于不通过 effect 更新的装饰有用)
     // value = value.map(transaction.changes); 
 
-    let decorations: Range<Decoration>[] = [];
 
     // 检查是否有来自外部的 highlightEffect
     for (const effect of transaction.effects) {
@@ -64,7 +65,6 @@ const highlightField = StateField.define<DecorationSet>({
             // 处理行高亮
             const fromLine = Math.max(1, range.from);
             const toLine = Math.min(transaction.state.doc.lines, range.to);
-            const className = range.className || 'cm-activeLine';
 
             for (let i = fromLine; i <= toLine; i++) {
               const line = transaction.state.doc.line(i);
@@ -121,7 +121,9 @@ const CodePanel: React.FC<CodePanelProps> = () => {
 
       // --- 添加基于 Tag 的代码块高亮 ---
       if (currentScene.highlightTag) {
-        const range = codeHighlightMap.get(currentScene.highlightTag);
+        // 从 Facet 获取 highlightMap
+        const map = editorRef.current.state.facet(highlightMapFacet); // 使用 Facet 获取 Map
+        const range = map.get(currentScene.highlightTag);
         if (range) {
           // CodeMirror 范围是 [from, to), 所以结束位置需要加 1 (如果 to 是字符偏移量)
           // 但在 createHighlightMap 中，我们获取的是结束标记的起始位置，所以这里的 range.to 已经是结束位置
@@ -136,7 +138,6 @@ const CodePanel: React.FC<CodePanelProps> = () => {
 
       // --- 添加悬停行的高亮 (保持不变) ---
       if (hoveredLine !== null && editorRef.current.state.doc.line(hoveredLine)) { // 检查行号是否存在
-          const line = editorRef.current.state.doc.line(hoveredLine);
            // 确保悬停行不与当前场景高亮范围重叠 (简单检查，复杂场景可能需要更多逻辑)
            const currentSceneRange = currentScene.highlightTag ? codeHighlightMap.get(currentScene.highlightTag) : null;
            let isOverlappingWithSceneHighlight = false;
@@ -191,6 +192,9 @@ const CodePanel: React.FC<CodePanelProps> = () => {
           EditorView.lineWrapping,
           EditorView.editable.of(false),
           highlightField, // Add the highlight field extension
+          dynamicHighlightExtension([]), // 使用实际导出的函数，并提供初始空数组
+          highlightedLines.of([]), // 提供 highlightedLines Facet 的初始值 (空数组)
+          hideTagsExtension(), // 添加隐藏标记的扩展
           // TODO: Add event handlers for hover and click
         ]}
         theme={cmTheme} // Apply CodeMirror theme based on state
@@ -201,5 +205,10 @@ const CodePanel: React.FC<CodePanelProps> = () => {
     </Panel>
   );
 };
+
+// 定义一个 Facet 来传递 highlightMap
+const highlightMapFacet = Facet.define<Map<string, { from: number; to: number }>, Map<string, { from: number; to: number }>>({
+  combine: values => values.length > 0 ? values[0] : new Map() // 简单合并策略，取第一个值
+});
 
 export default CodePanel;

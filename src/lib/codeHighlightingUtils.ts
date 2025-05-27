@@ -16,7 +16,7 @@ export function createHighlightMap(code: string): Map<string, { from: number; to
   }
 
   // 从 tagPositions 生成范围
-  for (const [tag, position] of tagPositions.entries()) {
+  for (const [tag] of tagPositions.entries()) {
     if (tag.endsWith('_start')) {
       const baseTag = tag.replace('_start', '');
       const startTag = tag; // 完整的起始标记名称
