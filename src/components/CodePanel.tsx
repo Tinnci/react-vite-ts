@@ -104,7 +104,7 @@ interface ExplanationItem {
 interface CodePanelProps {
   code: string;
   highlightedLines: number[];
-  explanations?: ExplanationItem[]; // 新增
+  explanations?: ExplanationItem[];
 }
 
 const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanations = [] }) => {
@@ -125,6 +125,9 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
   // 记录每行的ref
   const lineRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const [lineTops, setLineTops] = useState<{ [line: number]: number }>({});
+
+  // 解释 hover/选中状态
+  const [hoveredExplanationLine, setHoveredExplanationLine] = useState<number | null>(null);
 
   // 计算每行的offsetTop
   useEffect(() => {
@@ -154,22 +157,30 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
     return map;
   }, [explanations]);
 
+  // 动态Grid列宽
+  const showExplanation = explanations.length > 0 && hoveredExplanationLine !== null;
+  const gridTemplateColumns = explanations.length === 0
+    ? '1fr'
+    : showExplanation
+      ? 'minmax(0, 1fr) minmax(0, 1fr)'
+      : '1fr 0px';
+
   return (
     <div
-      className="relative w-full font-mono text-sm"
-      style={{ minHeight: 200, background: '#f5f5f5' }}
+      className="relative w-full font-mono text-sm bg-panel-bg text-foreground rounded"
+      style={{ minHeight: 200 }}
     >
-      {/* Grid布局：左代码，右解释 */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+          gridTemplateColumns,
           gap: '1.5rem',
           position: 'relative',
+          transition: 'grid-template-columns 0.3s',
         }}
       >
         {/* 左列：代码 */}
-        <div className="code-column" style={{ position: 'relative' }}>
+        <div className="code-column" style={{ position: 'relative', transition: 'width 0.3s' }}>
           <table style={{ width: '100%' }}>
             <tbody>
               {tokenizedLines.map((tokens, idx) => {
@@ -191,6 +202,12 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
                       color: highlight ? 'rgb(var(--highlight-fg))' : undefined,
                       transition: 'background 0.3s, border 0.3s, color 0.3s',
                     }}
+                    onMouseEnter={() => {
+                      if (explanationMap.has(lineNumber)) setHoveredExplanationLine(lineNumber);
+                    }}
+                    onMouseLeave={() => {
+                      if (explanationMap.has(lineNumber)) setHoveredExplanationLine(null);
+                    }}
                   >
                     <td style={{ userSelect: 'none', textAlign: 'right', paddingRight: 8, color: '#aaa', width: 1 }}>
                       {lineNumber}
@@ -205,30 +222,34 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
           </table>
         </div>
         {/* 右列：解释浮层 */}
-        <div className="explanation-column" style={{ position: 'relative', minHeight: 200 }}>
-          {/* 绝对定位的解释 */}
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%' }}>
-            {explanations.map(({ line, text }) =>
-              lineTops[line] !== undefined ? (
-                <div
-                  key={line}
-                  className="p-2 mb-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100 rounded shadow explanation-float"
-                  style={{
-                    position: 'absolute',
-                    top: lineTops[line],
-                    left: 0,
-                    width: '100%',
-                    transition: 'top 0.3s, opacity 0.3s',
-                    opacity: 1,
-                    zIndex: 2,
-                  }}
-                >
-                  {text}
-                </div>
-              ) : null
-            )}
+        {explanations.length > 0 && (
+          <div className="explanation-column" style={{ position: 'relative', minHeight: 200, transition: 'width 0.3s' }}>
+            {/* 绝对定位的解释，仅在 hover/选中时显示 */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%' }}>
+              {explanations.map(({ line, text }) =>
+                lineTops[line] !== undefined && hoveredExplanationLine === line ? (
+                  <div
+                    key={line}
+                    className="p-2 mb-1 rounded shadow explanation-float bg-panel-bg text-foreground"
+                    style={{
+                      position: 'absolute',
+                      top: lineTops[line],
+                      left: 0,
+                      width: '100%',
+                      transition: 'top 0.3s, opacity 0.3s',
+                      opacity: 1,
+                      zIndex: 2,
+                    }}
+                    onMouseEnter={() => setHoveredExplanationLine(line)}
+                    onMouseLeave={() => setHoveredExplanationLine(null)}
+                  >
+                    {text}
+                  </div>
+                ) : null
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
