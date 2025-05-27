@@ -25,7 +25,6 @@ function useTheme() {
 const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
   const hoveredLine = useHoverStore((state) => state.hoveredLine);
   const hoveredVar = useHoverStore((state) => state.hoveredVar);
-  const setHoveredVar = useHoverStore((state) => state.setHoveredVar);
   const theme = useTheme();
 
   return (
