@@ -1,4 +1,4 @@
-import { loadPyodide } from 'pyodide';
+import { loadPyodide, PyodideInterface } from 'pyodide';
 
 // ------------------- Type Definitions -------------------
 
@@ -99,27 +99,37 @@ def analyze(code):
 
 // ------------------- Pyodide Service -------------------
 
-class PyodideService {
-  private pyodide: any = null;
+type ProgressCallback = (status: string) => void;
 
-  async initialize(): Promise<void> {
-    if (this.pyodide) return;
+class PyodideService {
+  private pyodide: PyodideInterface | null = null;
+  private isInitialized = false;
+
+  async init(onProgress?: ProgressCallback): Promise<void> {
+    if (this.isInitialized) return;
+    if (onProgress) onProgress('正在加载 Pyodide 运行时...');
     this.pyodide = await loadPyodide({
       indexURL: '/pyodide/',
     });
+    if (onProgress) onProgress('Pyodide 加载完成，正在加载分析脚本...');
     this.pyodide.runPython(pythonAnalyzerScript);
+    this.isInitialized = true;
+    if (onProgress) onProgress('Pyodide 初始化完成');
   }
 
-  async analyzeCode(code: string): Promise<AnalysisResult> {
-    await this.initialize();
-    if (!this.pyodide) throw new Error('Pyodide not initialized');
+  async analyzeCode(code: string, onProgress?: ProgressCallback): Promise<AnalysisResult> {
+    await this.init(onProgress);
+    if (!this.pyodide) throw new Error('Pyodide 未初始化');
     try {
+      if (onProgress) onProgress('正在分析 Python 代码...');
       const analyzeFn = this.pyodide.globals.get('analyze');
       const jsonResult = analyzeFn(code);
       const result: AnalysisResult = JSON.parse(jsonResult);
+      if (onProgress) onProgress('分析完成');
       return result;
-    } catch (error) {
-      console.error('Error during Python code analysis:', error);
+    } catch (error: any) {
+      if (onProgress) onProgress('分析出错');
+      console.error('Python 代码分析出错:', error);
       return {
         locations: {},
         execution_steps: [],

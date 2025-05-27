@@ -1,29 +1,41 @@
 import { create } from 'zustand';
-import type { VariableLocations } from './pyodideService';
+import type { VariableLocations, AnalysisResult } from './pyodideService';
 
 interface CodeAnalysisState {
   locations: VariableLocations;
   isLoading: boolean;
   error: string | null;
+  statusMessage: string;
   analyzeCode: (code: string) => Promise<void>;
 }
 
 export const useCodeAnalysisStore = create<CodeAnalysisState>((set) => ({
-  locations: new Map(),
-  isLoading: true,
+  locations: {},
+  isLoading: false,
   error: null,
+  statusMessage: '',
   analyzeCode: async (code: string) => {
-    console.log('[codeAnalysisStore] analyzeCode start');
-    set({ isLoading: true, error: null });
-    console.log('[codeAnalysisStore] isLoading set to true');
+    set({ isLoading: true, error: null, statusMessage: '正在初始化 Pyodide...' });
     try {
       const { pyodideService } = await import('./pyodideService');
-      const locations = await pyodideService.analyzeCode(code);
-      set({ locations, isLoading: false });
-      console.log('[codeAnalysisStore] analyzeCode end, isLoading set to false');
+      const result: AnalysisResult = await pyodideService.analyzeCode(code, (msg) => set({ statusMessage: msg }));
+      if (result.error || result.runtime_error) {
+        set({
+          error: result.error || result.runtime_error || '未知错误',
+          isLoading: false,
+          statusMessage: '分析出错',
+          locations: result.locations || {},
+        });
+      } else {
+        set({
+          locations: result.locations,
+          isLoading: false,
+          error: null,
+          statusMessage: '分析完成',
+        });
+      }
     } catch (e: any) {
-      set({ error: e.message, isLoading: false });
-      console.log('[codeAnalysisStore] analyzeCode error, isLoading set to false');
+      set({ error: e.message, isLoading: false, statusMessage: '分析出错' });
     }
   },
 })); 
