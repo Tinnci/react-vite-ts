@@ -4,7 +4,31 @@
 
 @layer base {
   body {
-    @apply bg-slate-800;
-    @apply text-white;
+    @apply bg-white;
+    @apply text-gray-900;
+  }
+}
+
+@layer components {
+  .panel-card {
+    @apply bg-panel-bg border border-panel-border rounded-lg;
+  }
+  .panel-title {
+    @apply text-xl font-semibold text-panel-title border-b-2 border-panel-border pb-1 mb-2;
+  }
+  .panel-subtitle {
+    @apply text-lg font-semibold text-panel-subtitle border-b border-panel-border pb-1 mb-2;
+  }
+  .var-blue {
+    @apply text-panel-var-blue font-bold;
+  }
+  .var-red {
+    @apply text-panel-var-red;
+  }
+  .var-gray {
+    @apply text-panel-var-gray text-xs;
+  }
+  .var-highlight {
+    @apply bg-yellow-100 border-l-4 border-yellow-400;
   }
 }
