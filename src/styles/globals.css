@@ -60,16 +60,17 @@
   .var-gray {
     @apply text-panel-var-gray text-xs;
   }
-  .var-highlight {
+  /* 公共高亮样式 */
+  .interactive-highlight {
     background: rgb(var(--highlight-bg));
     border-left: 4px solid rgb(var(--highlight-border));
     color: rgb(var(--highlight-fg));
     transition: background 0.3s, border 0.3s, color 0.3s;
   }
+  .var-highlight {
+    @apply interactive-highlight;
+  }
   .explanation-hover {
-    @apply cursor-pointer underline decoration-dotted rounded px-1 transition-all duration-300;
-    background: rgb(var(--highlight-bg));
-    color: rgb(var(--highlight-fg));
-    border-left: 4px solid rgb(var(--highlight-border));
+    @apply cursor-pointer underline decoration-dotted rounded px-1 transition-all duration-300 interactive-highlight;
   }
 }

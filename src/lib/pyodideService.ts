@@ -29,16 +29,28 @@ class LocationVisitor(ast.NodeVisitor):
         self.locations = {}
 
     def visit_Name(self, node):
-        var_name = node.id
-        if var_name not in self.locations:
-            self.locations[var_name] = []
-        self.locations[var_name].append({
-            "lineno": node.lineno,
-            "col_offset": node.col_offset,
-            "end_lineno": node.end_lineno,
-            "end_col_offset": node.end_col_offset
-        })
+        # 只处理变量名（非属性、非关键字参数等）
+        # node.ctx: ast.Load, ast.Store, ast.Del
+        # 只高亮变量引用和赋值，不高亮属性名
+        if isinstance(node.ctx, (ast.Load, ast.Store, ast.Del)):
+            # 进一步排除 Attribute（obj.name 里的 name）
+            if not (hasattr(node, 'parent') and isinstance(node.parent, ast.Attribute) and node.parent.attr == node.id):
+                var_name = node.id
+                if var_name not in self.locations:
+                    self.locations[var_name] = []
+                self.locations[var_name].append({
+                    "lineno": node.lineno,
+                    "col_offset": node.col_offset,
+                    "end_lineno": node.end_lineno,
+                    "end_col_offset": node.end_col_offset
+                })
         self.generic_visit(node)
+
+    def visit(self, node):
+        # 给每个节点加 parent 属性，便于判断 Attribute
+        for child in ast.iter_child_nodes(node):
+            child.parent = node
+        super().visit(node)
 
 def analyze(code):
     try:
