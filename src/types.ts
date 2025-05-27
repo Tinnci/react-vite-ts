@@ -1,0 +1,1 @@
+export type HighlightMap = Map<string, { from: number; to: number }>; 
