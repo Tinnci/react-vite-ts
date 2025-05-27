@@ -1,4 +1,3 @@
-
 export interface VizState {
   Device: { status: string; device_count: number; shared_log: string[] };
   SmartDevice: { software_version: string; status?: string };
@@ -12,8 +11,8 @@ export type VizAction =
   | { type: 'RESET' };
 
 export const initialVizState: VizState = {
-  Device: { status: '"Offline"', device_count: 0, shared_log: [] },
-  SmartDevice: { software_version: '"1.0"' },
+  Device: { status: 'Offline', device_count: 0, shared_log: [] },
+  SmartDevice: { software_version: '1.0' },
   d1: null,
   d2: null,
   sd1: null,
@@ -58,90 +57,90 @@ function sceneAction(index: number, prevState: VizState): VizState {
   const newState = deepClone(prevState);
   switch (index) {
     case 0:
-      newState.Device = { status: '"Offline"', device_count: 0, shared_log: [] };
+      newState.Device = { status: 'Offline', device_count: 0, shared_log: [] };
       break;
     case 4:
-      newState.SmartDevice = { software_version: '"1.0"' };
+      newState.SmartDevice = { software_version: '1.0' };
       break;
     case 6:
       newState.Device.device_count = (newState.Device.device_count || 0) + 1;
       if (Array.isArray(newState.Device.shared_log)) {
-        newState.Device.shared_log.push('"Sensor01: Initialized"');
+        newState.Device.shared_log.push('Sensor01: Initialized');
       } else {
-        newState.Device.shared_log = ['"Sensor01: Initialized"'];
+        newState.Device.shared_log = ['Sensor01: Initialized'];
       }
       newState.d1 = {
-        device_id: '"Sensor01"',
-        location: '"Lab A"',
+        device_id: 'Sensor01',
+        location: 'Lab A',
         status: newState.Device.status,
       };
       break;
     case 7:
       newState.Device.device_count = (newState.Device.device_count || 0) + 1;
       if (Array.isArray(newState.Device.shared_log)) {
-        newState.Device.shared_log.push('"Actuator02: Initialized"');
+        newState.Device.shared_log.push('Actuator02: Initialized');
       } else {
-        newState.Device.shared_log = ['"Actuator02: Initialized"'];
+        newState.Device.shared_log = ['Actuator02: Initialized'];
       }
       newState.d2 = {
-        device_id: '"Actuator02"',
-        location: '"Lab B"',
+        device_id: 'Actuator02',
+        location: 'Lab B',
         status: newState.Device.status,
       };
       break;
     case 8:
       if (newState.d1) {
-        newState.d1.location = '"Rooftop"';
+        newState.d1.location = 'Rooftop';
       }
       break;
     case 9:
       if (newState.d1) {
-        newState.d1.status = '"Online"';
+        newState.d1.status = 'Online';
       }
       break;
     case 10:
-      newState.Device.status = '"Maintenance"';
+      newState.Device.status = 'Maintenance';
       break;
     case 11:
       if (Array.isArray(newState.Device.shared_log)) {
-        newState.Device.shared_log.push('"Sensor01: System Boot"');
-        newState.Device.shared_log.push('"Actuator02: Valve Open"');
+        newState.Device.shared_log.push('Sensor01: System Boot');
+        newState.Device.shared_log.push('Actuator02: Valve Open');
       } else {
-        newState.Device.shared_log = ['"Sensor01: System Boot"', '"Actuator02: Valve Open"'];
+        newState.Device.shared_log = ['Sensor01: System Boot', 'Actuator02: Valve Open'];
       }
       break;
     case 12:
       newState.Device.device_count = (newState.Device.device_count || 0) + 1;
       if (Array.isArray(newState.Device.shared_log)) {
-        newState.Device.shared_log.push('"Cam03: Initialized"');
+        newState.Device.shared_log.push('Cam03: Initialized');
       } else {
-        newState.Device.shared_log = ['"Cam03: Initialized"'];
+        newState.Device.shared_log = ['Cam03: Initialized'];
       }
       newState.sd1 = {
-        device_id: '"Cam03"',
-        location: '"Entrance"',
-        ip_address: '"192.168.1.100"',
+        device_id: 'Cam03',
+        location: 'Entrance',
+        ip_address: '192.168.1.100',
         status: newState.SmartDevice?.status || newState.Device.status,
       };
       break;
     case 13:
       if (!newState.SmartDevice) {
-        newState.SmartDevice = { software_version: '"1.0"' };
+        newState.SmartDevice = { software_version: '1.0' };
       }
-      newState.SmartDevice.software_version = '"1.1"';
+      newState.SmartDevice.software_version = '1.1';
       break;
     case 14:
       if (!newState.SmartDevice) {
-        newState.SmartDevice = { software_version: '"1.0"' };
+        newState.SmartDevice = { software_version: '1.0' };
       }
-      newState.SmartDevice.status = '"Active"';
+      newState.SmartDevice.status = 'Active';
       break;
     default:
       break;
   }
   // 保证 SmartDevice.software_version 始终为 string
   if (!newState.SmartDevice?.software_version) {
-    newState.SmartDevice = { ...newState.SmartDevice, software_version: '"1.0"' };
+    newState.SmartDevice = { ...newState.SmartDevice, software_version: '1.0' };
   }
   return newState;
 } 

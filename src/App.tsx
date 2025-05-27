@@ -1,4 +1,4 @@
-import React, { useReducer } from 'react';
+import React, { useReducer, useState, useEffect } from 'react';
 import { fullPythonCode } from '@/constants/pythonCode';
 import CodePanel from '@/components/CodePanel';
 import ClassDiagram from '@/components/ClassDiagram';
@@ -12,6 +12,15 @@ import { AnimatePresence, motion } from 'framer-motion';
 function App() {
   const [currentSceneIndex, setCurrentSceneIndex] = React.useState(0);
   const [vizState, dispatch] = useReducer(vizReducer, initialVizState);
+  const [tab, setTab] = useState<'visual' | 'explanation'>('visual');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // 处理场景切换
   const handleNext = () => {
@@ -36,49 +45,7 @@ function App() {
   };
 
   // Generate output based on the current vizState
-  const currentOutput = React.useMemo(() => {
-    const scene = scenes[currentSceneIndex];
-    if (scene.output !== "") {
-      return scene.output;
-    }
-
-    const d1StatusVal = (vizState.d1 && vizState.d1.status) ? vizState.d1.status : (vizState.Device?.status || 'N/A');
-    const d2StatusVal = (vizState.d2 && vizState.d2.status) ? vizState.d2.status : (vizState.Device?.status || 'N/A');
-    const sd1StatusVal = (vizState.sd1 && vizState.sd1.status) ? vizState.sd1.status : (vizState.SmartDevice?.status || vizState.Device?.status || 'N/A');
-    const deviceStatusVal = vizState.Device?.status || 'N/A';
-    const smartDeviceStatusVal = vizState.SmartDevice?.status || 'N/A (继承自 Device)';
-    const sharedLog = Array.isArray(vizState.Device?.shared_log) ? vizState.Device.shared_log.join(', ') : '';
-    const sd1IpAddress = vizState.sd1?.ip_address || 'N/A';
-    const smartDeviceSoftwareVersion = vizState.SmartDevice?.software_version || 'N/A';
-    const totalDevices = vizState.Device?.device_count || 0;
-
-    switch (currentSceneIndex) {
-      case 8:
-        return `d1.location 现在是 ${vizState.d1?.location || 'N/A'}\nd2.location 仍然是 ${vizState.d2?.location || 'N/A'}`;
-      case 9:
-        return `d1.status (实例变量): ${d1StatusVal}\nDevice.status (类变量): ${deviceStatusVal}\nd2.status (访问类变量): ${d2StatusVal}`;
-      case 10:
-        return `d1.status: ${d1StatusVal}\nd2.status: ${d2StatusVal}\nDevice.status: ${deviceStatusVal}`;
-      case 11:
-        return `Device.shared_log: [${sharedLog}]`;
-      case 13:
-        return `SmartDevice.software_version: ${smartDeviceSoftwareVersion}`;
-      case 14:
-        return `sd1.status (访问 SmartDevice.status): ${sd1StatusVal}\nDevice.status: ${deviceStatusVal}\nSmartDevice.status: ${smartDeviceStatusVal}\nd2.status (访问 Device.status): ${d2StatusVal}`;
-      case 15:
-        return (
-          `d1 info: ID: ${vizState.d1?.device_id || 'N/A'}, Loc: ${vizState.d1?.location || 'N/A'}, Status: ${d1StatusVal}
-d2 info: ID: ${vizState.d2?.device_id || 'N/A'}, Loc: ${vizState.d2?.location || 'N/A'}, Status: ${d2StatusVal}
-sd1 info: ID: ${vizState.sd1?.device_id || 'N/A'}, Loc: ${vizState.sd1?.location || 'N/A'}, Status: ${sd1StatusVal}, IP: ${sd1IpAddress}, SW: ${smartDeviceSoftwareVersion}
-Total devices: ${totalDevices}
-Device class status: ${deviceStatusVal}
-SmartDevice class status: ${smartDeviceStatusVal}
-Shared Log: [${sharedLog}]`
-        );
-      default:
-        return "";
-    }
-  }, [currentSceneIndex, scenes, vizState.Device?.device_count, vizState.Device.shared_log, vizState.Device?.status, vizState.SmartDevice?.software_version, vizState.SmartDevice?.status, vizState.d1, vizState.d2, vizState.sd1]);
+  const currentOutput = scenes[currentSceneIndex].getOutput(vizState);
 
   const currentScene = scenes[currentSceneIndex];
 
@@ -88,10 +55,32 @@ Shared Log: [${sharedLog}]`
         <h1 className="panel-title">Python OOP 动画演示：类的创建与初始化</h1>
       </div>
 
+      {/* 进度指示器 */}
+      <div className="mb-2 text-center text-sm text-panel-subtitle">
+        步骤 {currentSceneIndex + 1} / {scenes.length}
+      </div>
+
       <div className="controls text-center mb-6">
         <Button onClick={handleReset} className="mr-2">重置</Button>
         <Button onClick={handlePrev} className="mr-2" disabled={currentSceneIndex === 0}>上一步</Button>
         <Button onClick={handleNext} disabled={currentSceneIndex === scenes.length - 1}>下一步</Button>
+      </div>
+
+      {/* 场景目录/大纲 */}
+      <div className="scene-outline flex flex-wrap justify-center gap-2 mb-6">
+        {scenes.map((scene, idx) => (
+          <button
+            key={scene.title}
+            className={`px-3 py-1 rounded text-xs border transition-all duration-200 ${idx === currentSceneIndex ? 'bg-primary text-white border-primary' : 'bg-panel-bg text-panel-subtitle border-panel-border hover:bg-primary/10'}`}
+            style={{ fontWeight: idx === currentSceneIndex ? 'bold' : 'normal' }}
+            onClick={() => {
+              dispatch({ type: 'GOTO_SCENE', sceneIndex: idx });
+              setCurrentSceneIndex(idx);
+            }}
+          >
+            {idx + 1}. {scene.title}
+          </button>
+        ))}
       </div>
 
       <div className="content-grid grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -99,76 +88,167 @@ Shared Log: [${sharedLog}]`
           <h2 className="panel-title">Python 代码</h2>
           <CodePanel code={fullPythonCode} highlightedLines={currentScene.highlightLines} />
         </div>
+        {/* 移动端 Tab 切换，PC端两列 */}
         <div className="right-panel flex flex-col gap-6">
-          <div className="visualization-panel panel-card p-6 min-h-[400px]">
-            <h2 className="panel-title">可视化区域</h2>
-            <div id="classDiagrams">
-              <AnimatePresence>
-                {vizState.Device && (
-                  <motion.div
-                    key="Device"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ClassDiagram className="Device" vars={vizState.Device} highlightedVars={currentScene.highlightedVars || []} />
-                  </motion.div>
-                )}
-                {vizState.SmartDevice && (
-                  <motion.div
-                    key="SmartDevice"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ClassDiagram className="SmartDevice" vars={vizState.SmartDevice} inheritsFrom="Device" highlightedVars={currentScene.highlightedVars || []} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            <div id="instanceDiagrams">
-              <AnimatePresence>
-                {vizState.d1 && (
-                  <motion.div
-                    key="d1"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <InstanceDiagram instanceName="d1" className="Device" vars={vizState.d1} highlightedVars={currentScene.highlightedVars || []} />
-                  </motion.div>
-                )}
-                {vizState.d2 && (
-                  <motion.div
-                    key="d2"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <InstanceDiagram instanceName="d2" className="Device" vars={vizState.d2} highlightedVars={currentScene.highlightedVars || []} />
-                  </motion.div>
-                )}
-                {vizState.sd1 && (
-                  <motion.div
-                    key="sd1"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <InstanceDiagram instanceName="sd1" className="SmartDevice" vars={vizState.sd1} highlightedVars={currentScene.highlightedVars || []} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-          <div className="explanation-output-panel panel-card p-6 min-h-[400px]">
-            <ExplanationOutput explanation={currentScene.explanation} output={currentOutput || ""} />
-          </div>
+          {isMobile ? (
+            <>
+              <div className="flex mb-2">
+                <button
+                  className={`flex-1 py-2 rounded-t-lg border-b-2 transition-all duration-200 ${tab === 'visual' ? 'border-primary text-primary' : 'border-panel-border text-panel-subtitle'}`}
+                  onClick={() => setTab('visual')}
+                >可视化区域</button>
+                <button
+                  className={`flex-1 py-2 rounded-t-lg border-b-2 transition-all duration-200 ${tab === 'explanation' ? 'border-primary text-primary' : 'border-panel-border text-panel-subtitle'}`}
+                  onClick={() => setTab('explanation')}
+                >解释 / 输出</button>
+              </div>
+              {tab === 'visual' && (
+                <div className="visualization-panel panel-card p-6 min-h-[300px]">
+                  <h2 className="panel-title">可视化区域</h2>
+                  <div id="classDiagrams">
+                    <AnimatePresence>
+                      {vizState.Device && (
+                        <motion.div
+                          key="Device"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <ClassDiagram className="Device" vars={vizState.Device} highlightedVars={currentScene.highlightedVars || []} />
+                        </motion.div>
+                      )}
+                      {vizState.SmartDevice && (
+                        <motion.div
+                          key="SmartDevice"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <ClassDiagram className="SmartDevice" vars={vizState.SmartDevice} inheritsFrom="Device" highlightedVars={currentScene.highlightedVars || []} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <div id="instanceDiagrams">
+                    <AnimatePresence>
+                      {vizState.d1 && (
+                        <motion.div
+                          key="d1"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <InstanceDiagram instanceName="d1" className="Device" vars={vizState.d1} highlightedVars={currentScene.highlightedVars || []} />
+                        </motion.div>
+                      )}
+                      {vizState.d2 && (
+                        <motion.div
+                          key="d2"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <InstanceDiagram instanceName="d2" className="Device" vars={vizState.d2} highlightedVars={currentScene.highlightedVars || []} />
+                        </motion.div>
+                      )}
+                      {vizState.sd1 && (
+                        <motion.div
+                          key="sd1"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <InstanceDiagram instanceName="sd1" className="SmartDevice" vars={vizState.sd1} highlightedVars={currentScene.highlightedVars || []} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              )}
+              {tab === 'explanation' && (
+                <div className="explanation-output-panel panel-card p-6 min-h-[300px]">
+                  <ExplanationOutput explanation={currentScene.explanation} output={currentOutput || ""} />
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="visualization-panel panel-card p-6 min-h-[400px]">
+                <h2 className="panel-title">可视化区域</h2>
+                <div id="classDiagrams">
+                  <AnimatePresence>
+                    {vizState.Device && (
+                      <motion.div
+                        key="Device"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ClassDiagram className="Device" vars={vizState.Device} highlightedVars={currentScene.highlightedVars || []} />
+                      </motion.div>
+                    )}
+                    {vizState.SmartDevice && (
+                      <motion.div
+                        key="SmartDevice"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ClassDiagram className="SmartDevice" vars={vizState.SmartDevice} inheritsFrom="Device" highlightedVars={currentScene.highlightedVars || []} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <div id="instanceDiagrams">
+                  <AnimatePresence>
+                    {vizState.d1 && (
+                      <motion.div
+                        key="d1"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <InstanceDiagram instanceName="d1" className="Device" vars={vizState.d1} highlightedVars={currentScene.highlightedVars || []} />
+                      </motion.div>
+                    )}
+                    {vizState.d2 && (
+                      <motion.div
+                        key="d2"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <InstanceDiagram instanceName="d2" className="Device" vars={vizState.d2} highlightedVars={currentScene.highlightedVars || []} />
+                      </motion.div>
+                    )}
+                    {vizState.sd1 && (
+                      <motion.div
+                        key="sd1"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <InstanceDiagram instanceName="sd1" className="SmartDevice" vars={vizState.sd1} highlightedVars={currentScene.highlightedVars || []} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+              <div className="explanation-output-panel panel-card p-6 min-h-[400px]">
+                <ExplanationOutput explanation={currentScene.explanation} output={currentOutput || ""} />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

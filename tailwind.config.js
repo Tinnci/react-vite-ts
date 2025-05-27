@@ -19,6 +19,8 @@ export default {
           DEFAULT: withOpacity('--primary'),
           foreground: withOpacity('--primary-foreground'),
         },
+        secondary: withOpacity('--secondary'),
+        accent: withOpacity('--accent'),
         'panel-bg': withOpacity('--panel-bg'),
         'panel-border': withOpacity('--panel-border'),
         'panel-title': withOpacity('--panel-title'),
@@ -26,6 +28,9 @@ export default {
         'panel-var-blue': withOpacity('--panel-var-blue'),
         'panel-var-red': withOpacity('--panel-var-red'),
         'panel-var-gray': withOpacity('--panel-var-gray'),
+        'highlight-bg': withOpacity('--highlight-bg'),
+        'highlight-border': withOpacity('--highlight-border'),
+        'highlight-fg': withOpacity('--highlight-fg'),
         'secondary': '#10b981', // 例如次要颜色
         'accent': '#f59e0b',    // 例如强调颜色
         'dark-background': '#1a202c', // 深色背景

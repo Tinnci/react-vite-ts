@@ -28,8 +28,15 @@ function parseExplanation(explanation: string, handleMouseEnter: (line: number) 
         key={key++}
         onMouseEnter={() => handleMouseEnter(line)}
         onMouseLeave={handleMouseLeave}
-        className="cursor-pointer underline decoration-dotted text-yellow-700"
-        style={{ background: '#fffbe6', borderRadius: 2, padding: '0 2px' }}
+        className="cursor-pointer underline decoration-dotted"
+        style={{
+          background: 'rgb(var(--highlight-bg))',
+          color: 'rgb(var(--highlight-fg))',
+          borderRadius: 2,
+          borderLeft: '4px solid rgb(var(--highlight-border))',
+          padding: '0 2px',
+          transition: 'background 0.3s, border 0.3s, color 0.3s',
+        }}
         dangerouslySetInnerHTML={{ __html: content }}
       />
     );

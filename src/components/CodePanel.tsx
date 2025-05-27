@@ -38,9 +38,12 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
         lineProps={lineNumber => {
           const style: React.CSSProperties = {};
           if (highlightedLines.includes(lineNumber) || hoveredLine === lineNumber) {
-            style.backgroundColor = hoveredLine === lineNumber ? '#fde68a' : '#4a5568';
-            style.borderLeft = '4px solid #60a5fa';
-            style.transition = 'background 0.2s, border 0.2s';
+            style.background = hoveredLine === lineNumber
+              ? 'rgb(var(--highlight-bg))'
+              : 'rgba(var(--highlight-bg), 0.5)';
+            style.borderLeft = '4px solid rgb(var(--highlight-border))';
+            style.color = 'rgb(var(--highlight-fg))';
+            style.transition = 'background 0.3s, border 0.3s, color 0.3s';
             style.display = 'block';
           }
           style.paddingRight = '1rem';

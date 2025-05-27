@@ -15,6 +15,11 @@
     --panel-var-gray: 107 114 128;
     --primary: 79 70 229;
     --primary-foreground: 255 255 255;
+    --secondary: 16 185 129;
+    --accent: 245 158 11;
+    --highlight-bg: 254 243 199; /* 浅黄色 */
+    --highlight-border: 251 191 36; /* 深黄边 */
+    --highlight-fg: 202 138 4; /* 高亮前景色 */
   }
   .dark {
     --background: 26 32 44;
@@ -28,6 +33,11 @@
     --panel-var-gray: 156 163 175;
     --primary: 99 102 241;
     --primary-foreground: 255 255 255;
+    --secondary: 16 185 129;
+    --accent: 245 158 11;
+    --highlight-bg: 113 63 18; /* 深色高亮背景 */
+    --highlight-border: 251 191 36;
+    --highlight-fg: 253 230 138;
   }
 }
 
@@ -51,6 +61,9 @@
     @apply text-panel-var-gray text-xs;
   }
   .var-highlight {
-    @apply bg-yellow-100 border-l-4 border-yellow-400;
+    background: rgb(var(--highlight-bg));
+    border-left: 4px solid rgb(var(--highlight-border));
+    color: rgb(var(--highlight-fg));
+    transition: background 0.3s, border 0.3s, color 0.3s;
   }
 }
