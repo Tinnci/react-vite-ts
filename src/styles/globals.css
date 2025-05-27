@@ -119,3 +119,16 @@
 
   /* TODO: Add pinned highlight style for CodeMirror elements */
 }
+
+.cm-activeLine {
+  background-color: rgba(255, 255, 0, 0.3); /* 你现有的单行高亮 */
+}
+
+.cm-highlight-paragraph {
+  background-color: rgba(173, 216, 230, 0.4); /* 新的段落高亮样式 */
+  border-left: 3px solid #007acc;
+}
+
+.cm-hoveredLine {
+  background-color: rgba(144, 238, 144, 0.4); /* 悬停行的高亮样式 (浅绿色) */
+}
