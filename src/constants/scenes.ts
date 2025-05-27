@@ -14,7 +14,7 @@ export interface Scene {
   highlightedVars?: string[];
   explanation: string | ExplanationPart[];
   getOutput: (state: VizState) => string;
-  actionType: string;
+  transformState: (prev: VizState) => VizState;
 }
 
 export const scenes: Scene[] = [
@@ -34,7 +34,11 @@ export const scenes: Scene[] = [
       { type: 'text', content: '。这些变量属于类本身。' },
     ],
     getOutput: () => '',
-    actionType: 'INIT_DEVICE_CLASS',
+    transformState: (prev) => {
+      const next = structuredClone(prev);
+      next.Device = { status: 'Offline', device_count: 0, shared_log: [] };
+      return next;
+    },
   },
   {
     title: '定义 Device 构造方法',
@@ -49,7 +53,7 @@ export const scenes: Scene[] = [
       { type: 'text', content: ' 是对新创建实例的引用。' },
     ],
     getOutput: () => '',
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '定义类方法',
@@ -66,7 +70,7 @@ export const scenes: Scene[] = [
       { type: 'text', content: ' 引用类本身。' },
     ],
     getOutput: () => '',
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '定义实例方法',
@@ -81,7 +85,7 @@ export const scenes: Scene[] = [
       { type: 'text', content: ' 操作实例数据或类数据。' },
     ],
     getOutput: () => '',
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '定义 SmartDevice 子类',
@@ -100,7 +104,7 @@ export const scenes: Scene[] = [
       { type: 'text', content: ' 的所有属性和方法。' },
     ],
     getOutput: () => '',
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '定义 SmartDevice 的方法',
@@ -119,7 +123,7 @@ export const scenes: Scene[] = [
       { type: 'text', content: ' 用于调用父类的方法。' },
     ],
     getOutput: () => '',
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '创建 Device 实例 d1',
@@ -148,7 +152,12 @@ export const scenes: Scene[] = [
       { type: 'text', content: '。' },
     ],
     getOutput: () => '',
-    actionType: 'CREATE_D1',
+    transformState: (prev) => {
+      const next = structuredClone(prev);
+      next.d1 = { device_id: 'Sensor01', location: 'Lab A' };
+      next.Device = { ...prev.Device, device_count: 1, shared_log: [...prev.Device?.shared_log || []] };
+      return next;
+    },
   },
   {
     title: '创建 Device 实例 d2',
@@ -169,7 +178,12 @@ export const scenes: Scene[] = [
       { type: 'text', content: ' 增加到 2。<br>4. 活动被记录到共享日志。' },
     ],
     getOutput: () => '',
-    actionType: 'CREATE_D2',
+    transformState: (prev) => {
+      const next = structuredClone(prev);
+      next.d2 = { device_id: 'Actuator02', location: 'Lab B' };
+      next.Device = { ...prev.Device, device_count: 2, shared_log: [...prev.Device?.shared_log || []] };
+      return next;
+    },
   },
   {
     title: '实例变量的独立性',
@@ -188,7 +202,7 @@ export const scenes: Scene[] = [
       { type: 'text', content: '，体现了实例变量的独立性。' },
     ],
     getOutput: (state) => `d1.location 现在是 ${state.d1?.location ?? 'N/A'}\nd2.location 仍然是 ${state.d2?.location ?? 'N/A'}`,
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '实例变量遮蔽类变量',
@@ -220,7 +234,7 @@ export const scenes: Scene[] = [
       const deviceStatus = state.Device?.status ?? 'N/A';
       return `d1.status (实例变量): ${d1Status}\nDevice.status (类变量): ${deviceStatus}\nd2.status (访问类变量): ${d2Status}`;
     },
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '通过类方法修改类变量',
@@ -246,7 +260,7 @@ export const scenes: Scene[] = [
       const deviceStatus = state.Device?.status ?? 'N/A';
       return `d1.status: ${d1Status}\nd2.status: ${d2Status}\nDevice.status: ${deviceStatus}`;
     },
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '可变类变量的共享',
@@ -270,7 +284,7 @@ export const scenes: Scene[] = [
       const sharedLog = Array.isArray(state.Device?.shared_log) ? state.Device.shared_log.join(', ') : '';
       return `Device.shared_log: [${sharedLog}]`;
     },
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '创建 SmartDevice 实例 sd1',
@@ -301,7 +315,12 @@ export const scenes: Scene[] = [
       { type: 'text', content: '。' },
     ],
     getOutput: () => '',
-    actionType: 'CREATE_SD1',
+    transformState: (prev) => {
+      const next = structuredClone(prev);
+      next.sd1 = { device_id: 'Sensor01', location: 'Lab A', ip_address: '192.168.1.1' };
+      next.Device = { ...prev.Device, device_count: 3, shared_log: [...prev.Device?.shared_log || []] };
+      return next;
+    },
   },
   {
     title: '子类修改类变量',
@@ -321,7 +340,7 @@ export const scenes: Scene[] = [
       const smartDeviceSoftwareVersion = state.SmartDevice?.software_version ?? 'N/A';
       return `SmartDevice.software_version: ${smartDeviceSoftwareVersion}`;
     },
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '子类遮蔽继承类变量',
@@ -352,7 +371,7 @@ export const scenes: Scene[] = [
       const d2Status = state.d2?.status ?? state.Device?.status ?? 'N/A';
       return `sd1.status (访问 SmartDevice.status): ${sd1Status}\nDevice.status: ${deviceStatus}\nSmartDevice.status: ${smartDeviceStatus}\nd2.status (访问 Device.status): ${d2Status}`;
     },
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
   {
     title: '打印所有对象信息',
@@ -380,6 +399,6 @@ export const scenes: Scene[] = [
         `Shared Log: [${sharedLog}]`
       );
     },
-    actionType: 'NOOP',
+    transformState: (prev) => prev,
   },
 ]; 

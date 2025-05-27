@@ -71,7 +71,7 @@ function App() {
   const currentScene = scenes[currentSceneIndex];
 
   return (
-    <div className="container mx-auto p-8 bg-white text-gray-900 rounded-lg shadow-lg">
+    <div className="container mx-auto p-8 bg-background text-foreground rounded-lg shadow-lg">
       <div className="header text-center mb-6 flex flex-col items-center gap-2">
         <h1 className="panel-title">Python OOP 动画演示：类的创建与初始化</h1>
         <Button onClick={toggleTheme} variant="outline" size="sm">
