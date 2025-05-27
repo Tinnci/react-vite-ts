@@ -44,8 +44,35 @@ class LocationVisitor(ast.NodeVisitor):
                     "lineno": node.lineno,
                     "col_offset": node.col_offset,
                     "end_lineno": node.end_lineno,
-                    "end_col_offset": node.end_col_offset
+                    "end_col_offset": node.end_col_offset,
+                    "type": "variable"
                 })
+        self.generic_visit(node)
+
+    def visit_ClassDef(self, node):
+        class_name = node.name
+        if class_name not in self.locations:
+            self.locations[class_name] = []
+        self.locations[class_name].append({
+            "lineno": node.lineno,
+            "col_offset": node.col_offset,
+            "end_lineno": node.end_lineno,
+            "end_col_offset": node.end_col_offset,
+            "type": "class"
+        })
+        self.generic_visit(node)
+
+    def visit_FunctionDef(self, node):
+        func_name = node.name
+        if func_name not in self.locations:
+            self.locations[func_name] = []
+        self.locations[func_name].append({
+            "lineno": node.lineno,
+            "col_offset": node.col_offset,
+            "end_lineno": node.end_lineno,
+            "end_col_offset": node.end_col_offset,
+            "type": "function"
+        })
         self.generic_visit(node)
 
     def visit(self, node):
@@ -55,7 +82,7 @@ class LocationVisitor(ast.NodeVisitor):
 
 def analyze(code):
     result = {}
-    # AST 变量位置
+    # AST 变量、类、函数位置
     try:
         tree = ast.parse(code)
         visitor = LocationVisitor()

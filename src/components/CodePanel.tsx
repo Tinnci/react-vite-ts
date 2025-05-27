@@ -14,22 +14,22 @@ interface PrismToken {
   content: string | PrismToken | Array<string | PrismToken>;
 }
 
-// 工具函数：判断某 token 是否为变量名，并返回其所在行号
-function isVarToken(
-  lineNumber: number,
-  colStart: number,
-  locations: VariableLocations,
-  hoveredVar: string | null
-): boolean {
-  if (!hoveredVar) return false;
-  const varLocs = locations[hoveredVar];
-  if (!varLocs) return false;
-  // 检查当前 token 是否落在变量的某个位置
-  return varLocs.some((loc: any) => {
+// 工具函数：判断某 token 是否与当前悬停元素匹配
+function isHoveredElement(lineNumber: number, colStart: number, colEnd: number, locations: VariableLocations, hoveredElement: any): boolean {
+  if (!hoveredElement) return false;
+  const { type, name } = hoveredElement;
+
+  const elementLocations = locations[name];
+  if (!elementLocations) return false;
+
+  return elementLocations.some((loc: any) => {
+    // 检查类型是否匹配
+    if (loc.type !== type) return false;
+
+    // 检查位置是否重叠
     return (
       loc.lineno === lineNumber &&
-      colStart >= loc.col_offset &&
-      colStart < loc.end_col_offset
+      ((colStart >= loc.col_offset && colStart < loc.end_col_offset) || (colEnd > loc.col_offset && colEnd <= loc.end_col_offset))
     );
   });
 }
@@ -40,16 +40,19 @@ function renderToken(
   lineNumber: number,
   colStart: number,
   locations: VariableLocations,
-  setHoveredVar: (varName: string | null) => void,
-  hoveredVar: string | null
+  setHoveredElement: (element: any) => void,
+  hoveredElement: any
 ): React.ReactNode {
   if (typeof token === 'string') {
+    // 对于字符串类型的token，如果它是变量、函数或类名，也需要处理悬停
+    // 这部分逻辑比较复杂，可能需要更高级的文本分析或依赖Pyodide的更详细输出
+    // 暂时跳过对纯字符串token的悬停处理
     return token;
   }
   if (Array.isArray(token)) {
     let col = colStart;
     return token.map(t => {
-      const rendered = renderToken(t, lineNumber, col, locations, setHoveredVar, hoveredVar);
+      const rendered = renderToken(t, lineNumber, col, locations, setHoveredElement, hoveredElement);
       const len = typeof t === 'string' ? t.length : (typeof t.content === 'string' ? t.content.length : 0);
       col += len;
       return rendered;
@@ -59,36 +62,40 @@ function renderToken(
   if (typeof token.content !== 'string') {
     return (
       <span className={`token ${token.type}`}>
-        {renderToken(token.content, lineNumber, colStart, locations, setHoveredVar, hoveredVar)}
+        {renderToken(token.content, lineNumber, colStart, locations, setHoveredElement, hoveredElement)}
       </span>
     );
   }
-  // 变量名高亮
+  // 变量名、函数名、类名等高亮和事件处理
   if (
     token.type === 'variable' ||
     token.type === 'function' ||
     token.type === 'class-name' ||
     token.type === 'builtin'
   ) {
+    const tokenText = token.content;
+    const colEnd = colStart + tokenText.length;
+    const isHighlighted = isHoveredElement(lineNumber, colStart, colEnd, locations, hoveredElement);
+
     return (
       <span
-        className={
-          isVarToken(
-            lineNumber,
-            colStart,
-            locations,
-            hoveredVar
-          )
-            ? 'var-highlight'
-            : ''
-        }
+        className={isHighlighted ? 'var-highlight' : ''}
         onMouseEnter={() => {
-          if (typeof token.content === 'string') setHoveredVar(token.content);
+          let type: 'variable' | 'function' | 'class' | undefined;
+          if (token.type === 'variable') type = 'variable';
+          else if (token.type === 'function' || token.type === 'builtin') type = 'function';
+          else if (token.type === 'class-name') type = 'class';
+
+          if (type) {
+             setHoveredElement({ type, name: tokenText });
+          } else {
+             setHoveredElement(null);
+          }
         }}
-        onMouseLeave={() => setHoveredVar(null)}
+        onMouseLeave={() => setHoveredElement(null)}
         style={{ cursor: 'pointer' }}
       >
-        {token.content}
+        {tokenText}
       </span>
     );
   }
@@ -114,8 +121,8 @@ const LEAVE_DELAY = 120; // ms
 const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanations = [] }) => {
   const hoveredLine = useHoverStore((state) => state.hoveredLine);
   const setHoveredLine = useHoverStore((state) => state.setHoveredLine);
-  const hoveredVar = useHoverStore((state) => state.hoveredVar);
-  const setHoveredVar = useHoverStore((state) => state.setHoveredVar);
+  const hoveredElement = useHoverStore((state) => state.hoveredElement);
+  const setHoveredElement = useHoverStore((state) => state.setHoveredElement);
   const locations = useCodeAnalysisStore((state) => state.locations);
 
   // 按行分割代码
@@ -206,7 +213,7 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
                   {lineNumber}
                 </td>
                 <td style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', paddingRight: '1rem', position: 'relative' }}>
-                  {renderToken(tokens, lineNumber, 0, locations, setHoveredVar, hoveredVar)}
+                  {renderToken(tokens, lineNumber, 0, locations, setHoveredElement, hoveredElement)}
                   {/* 解释浮层，绝对定位在右侧 */}
                   {explanation && hoveredLine === lineNumber && (
                     <div

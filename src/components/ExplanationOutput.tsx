@@ -3,6 +3,9 @@ import { useHoverStore } from '@/lib/hoverStore';
 import type { ExplanationPart } from '@/constants/scenes';
 import { Panel } from './ui/Panel';
 
+// 新增：导入 HoveredElement 类型
+import type { HoveredElement } from '@/lib/hoverStore';
+
 interface ExplanationOutputProps {
   explanation: string | ExplanationPart[];
   output: string;
@@ -13,8 +16,9 @@ function renderExplanationPart(
   part: ExplanationPart,
   handleLineEnter: (line: number) => void,
   handleLineLeave: () => void,
-  handleVarEnter: (varName: string) => void,
-  handleVarLeave: () => void,
+  // 修改这里：使用新的 handleElementEnter/Leave
+  handleElementEnter: (element: HoveredElement) => void,
+  handleElementLeave: () => void,
   idx: number
 ) {
   if (part.type === 'text') {
@@ -36,6 +40,7 @@ function renderExplanationPart(
     const children = segments.map((seg, i) => {
       if (seg.startsWith('<code>') && seg.endsWith('</code>')) {
         const codeText = seg.slice(6, -7);
+        // TODO: 为 code 标签内的文本添加悬停事件，联动 hoveredElement
         return <code key={i} className="px-1 rounded bg-panel-bg text-panel-var-blue font-mono text-sm">{codeText}</code>;
       }
       if (seg === '<br>' || seg === '<br/>') return <br key={i} />;
@@ -47,7 +52,7 @@ function renderExplanationPart(
           key={idx}
           onMouseEnter={() => handleLineEnter(part.line!)}
           onMouseLeave={handleLineLeave}
-          className="explanation-hover"
+          className="explanation-hover explanation-line-hover"
         >
           {children}
         </span>
@@ -56,9 +61,9 @@ function renderExplanationPart(
       return (
         <span
           key={idx}
-          onMouseEnter={() => handleVarEnter(part.var!)}
-          onMouseLeave={handleVarLeave}
-          className="explanation-hover"
+          onMouseEnter={() => handleElementEnter({ type: 'variable', name: part.var! })}
+          onMouseLeave={handleElementLeave}
+          className="explanation-hover explanation-var-hover"
         >
           {children}
         </span>
@@ -80,7 +85,10 @@ function renderExplanationPart(
 
 const ExplanationOutput: React.FC<ExplanationOutputProps> = ({ explanation, output }) => {
   const setHoveredLine = useHoverStore((state) => state.setHoveredLine);
-  const setHoveredVar = useHoverStore((state) => state.setHoveredVar);
+  // const setHoveredVar = useHoverStore((state) => state.setHoveredVar); // 移除旧的 setHoveredVar
+  // 新增：获取 setHoveredElement
+  const setHoveredElement = useHoverStore((state) => state.setHoveredElement);
+
   return (
     <Panel className="output-panel mt-4 p-4 min-h-[100px]">
       <h2 className="panel-title">解释 / 输出</h2>
@@ -91,8 +99,8 @@ const ExplanationOutput: React.FC<ExplanationOutputProps> = ({ explanation, outp
                 part,
                 (line) => setHoveredLine(line),
                 () => setHoveredLine(null),
-                (varName) => setHoveredVar(varName),
-                () => setHoveredVar(null),
+                (element) => setHoveredElement(element),
+                () => setHoveredElement(null),
                 idx
               )
             )

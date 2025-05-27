@@ -71,6 +71,16 @@
     @apply interactive-highlight;
   }
   .explanation-hover {
-    @apply cursor-pointer underline decoration-dotted rounded px-1 transition-all duration-300 interactive-highlight;
+    @apply cursor-pointer underline decoration-dotted rounded px-1 transition-all duration-300;
+  }
+  .explanation-line-hover {
+    /* 行悬停的高亮样式 */
+    @apply interactive-highlight;
+  }
+  .explanation-var-hover {
+    /* 变量悬停的高亮样式，可以与行高亮区分 */
+    background: rgb(var(--highlight-bg)); /* 变量使用相同的背景高亮 */
+    color: rgb(var(--highlight-fg)); /* 变量使用相同的前景色 */
+    /* 可以添加其他样式，例如边框或者下划线样式 */
   }
 }
