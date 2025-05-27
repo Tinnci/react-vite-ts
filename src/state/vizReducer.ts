@@ -22,34 +22,39 @@ export const initialVizState: VizState = {
   sd1: null,
 };
 
-// 深拷贝工具
-function deepClone<T>(obj: T): T {
-  if (obj === null || typeof obj !== 'object') {
-    return obj;
-  }
-  if (Array.isArray(obj)) {
-    return obj.map(deepClone) as T;
-  }
-  const cloned: any = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      cloned[key] = deepClone((obj as any)[key]);
-    }
-  }
-  return cloned as T;
-}
+// 全局缓存：key 为场景索引，value 为 VizState
+const sceneStateCache = new Map<number, VizState>();
+sceneStateCache.set(0, structuredClone(initialVizState));
 
 // 这里实现所有场景的状态变更逻辑
 export function vizReducer(state: VizState, action: VizAction): VizState {
   switch (action.type) {
-    case 'RESET':
+    case 'RESET': {
+      sceneStateCache.clear();
+      sceneStateCache.set(0, structuredClone(initialVizState));
       return structuredClone(initialVizState);
+    }
     case 'GOTO_SCENE': {
-      let newState: VizState = structuredClone(initialVizState);
-      for (let i = 0; i <= action.sceneIndex; i++) {
-        newState = scenes[i].reducer(newState);
+      const target = action.sceneIndex;
+      if (sceneStateCache.has(target)) {
+        // 命中缓存
+        return { ...structuredClone(sceneStateCache.get(target)!), currentSceneIndex: target };
       }
-      newState.currentSceneIndex = action.sceneIndex;
+      // 查找最近的缓存点
+      let nearest = 0;
+      for (let i = target; i >= 0; i--) {
+        if (sceneStateCache.has(i)) {
+          nearest = i;
+          break;
+        }
+      }
+      let newState = structuredClone(sceneStateCache.get(nearest)!);
+      // 增量执行 reducer
+      for (let i = nearest + 1; i <= target; i++) {
+        newState = scenes[i].reducer(newState);
+        sceneStateCache.set(i, structuredClone(newState));
+      }
+      newState.currentSceneIndex = target;
       return newState;
     }
     default:

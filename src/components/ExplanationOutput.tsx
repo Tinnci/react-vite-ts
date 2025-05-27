@@ -1,80 +1,83 @@
 import React from 'react';
 import { useHoverStore } from '@/lib/hoverStore';
+import type { ExplanationPart } from '@/constants/scenes';
 
 interface ExplanationOutputProps {
-  explanation: string;
+  explanation: string | ExplanationPart[];
   output: string;
 }
 
-// 解析 <hover-target line={x}> 或 <hover-target var="xxx">内容</hover-target> 并动态渲染
-function parseExplanation(
-  explanation: string,
+// 渲染结构化 explanation
+function renderExplanation(
+  explanation: ExplanationPart[],
   handleLineEnter: (line: number) => void,
   handleLineLeave: () => void,
   handleVarEnter: (varName: string) => void,
   handleVarLeave: () => void
 ) {
-  const regex = /<hover-target(?: line={(\d+)})?(?: var=\"([^"]+)\")?>([\s\S]*?)<\/hover-target>/g;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match;
-  let key = 0;
-  while ((match = regex.exec(explanation)) !== null) {
-    const [full, lineStr, varName, content] = match;
-    // 添加前面的普通文本
-    if (match.index > lastIndex) {
-      parts.push(
-        <span key={key++} dangerouslySetInnerHTML={{ __html: explanation.slice(lastIndex, match.index) }} />
-      );
+  return explanation.map((part, idx) => {
+    if (part.type === 'text') {
+      return <span key={idx} dangerouslySetInnerHTML={{ __html: part.content }} />;
     }
-    // 添加高亮交互部分
-    if (lineStr) {
-      const line = parseInt(lineStr, 10);
-      parts.push(
-        <span
-          key={key++}
-          onMouseEnter={() => handleLineEnter(line)}
-          onMouseLeave={handleLineLeave}
-          className="cursor-pointer underline decoration-dotted"
-          style={{
-            background: 'rgb(var(--highlight-bg))',
-            color: 'rgb(var(--highlight-fg))',
-            borderRadius: 2,
-            borderLeft: '4px solid rgb(var(--highlight-border))',
-            padding: '0 2px',
-            transition: 'background 0.3s, border 0.3s, color 0.3s',
-          }}
-          dangerouslySetInnerHTML={{ __html: content }}
-        />
-      );
-    } else if (varName) {
-      parts.push(
-        <span
-          key={key++}
-          onMouseEnter={() => handleVarEnter(varName)}
-          onMouseLeave={handleVarLeave}
-          className="cursor-pointer underline decoration-dotted"
-          style={{
-            background: 'rgb(var(--highlight-bg))',
-            color: 'rgb(var(--highlight-fg))',
-            borderRadius: 2,
-            borderLeft: '4px solid rgb(var(--highlight-border))',
-            padding: '0 2px',
-            transition: 'background 0.3s, border 0.3s, color 0.3s',
-          }}
-          dangerouslySetInnerHTML={{ __html: content }}
-        />
-      );
+    if (part.type === 'hover') {
+      // 支持 line 或 var
+      if (part.line) {
+        return (
+          <span
+            key={idx}
+            onMouseEnter={() => handleLineEnter(part.line!)}
+            onMouseLeave={handleLineLeave}
+            className="cursor-pointer underline decoration-dotted"
+            style={{
+              background: 'rgb(var(--highlight-bg))',
+              color: 'rgb(var(--highlight-fg))',
+              borderRadius: 2,
+              borderLeft: '4px solid rgb(var(--highlight-border))',
+              padding: '0 2px',
+              transition: 'background 0.3s, border 0.3s, color 0.3s',
+            }}
+            dangerouslySetInnerHTML={{ __html: part.content }}
+          />
+        );
+      } else if (part.var) {
+        return (
+          <span
+            key={idx}
+            onMouseEnter={() => handleVarEnter(part.var!)}
+            onMouseLeave={handleVarLeave}
+            className="cursor-pointer underline decoration-dotted"
+            style={{
+              background: 'rgb(var(--highlight-bg))',
+              color: 'rgb(var(--highlight-fg))',
+              borderRadius: 2,
+              borderLeft: '4px solid rgb(var(--highlight-border))',
+              padding: '0 2px',
+              transition: 'background 0.3s, border 0.3s, color 0.3s',
+            }}
+            dangerouslySetInnerHTML={{ __html: part.content }}
+          />
+        );
+      } else {
+        // 仅内容高亮
+        return (
+          <span
+            key={idx}
+            className="underline decoration-dotted"
+            style={{
+              background: 'rgb(var(--highlight-bg))',
+              color: 'rgb(var(--highlight-fg))',
+              borderRadius: 2,
+              borderLeft: '4px solid rgb(var(--highlight-border))',
+              padding: '0 2px',
+              transition: 'background 0.3s, border 0.3s, color 0.3s',
+            }}
+            dangerouslySetInnerHTML={{ __html: part.content }}
+          />
+        );
+      }
     }
-    lastIndex = match.index + full.length;
-  }
-  // 添加剩余文本
-  if (lastIndex < explanation.length) {
-    parts.push(
-      <span key={key++} dangerouslySetInnerHTML={{ __html: explanation.slice(lastIndex) }} />
-    );
-  }
-  return parts;
+    return null;
+  });
 }
 
 const ExplanationOutput: React.FC<ExplanationOutputProps> = ({ explanation, output }) => {
@@ -84,13 +87,15 @@ const ExplanationOutput: React.FC<ExplanationOutputProps> = ({ explanation, outp
     <div className="output-panel panel-card mt-4 p-4 min-h-[100px]">
       <h2 className="panel-title">解释 / 输出</h2>
       <div id="explanationArea" className="comment mt-2 p-2 bg-white border-l-4 border-yellow-400 text-yellow-700 rounded text-sm">
-        {parseExplanation(
-          explanation,
-          (line) => setHoveredLine(line),
-          () => setHoveredLine(null),
-          (varName) => setHoveredVar(varName),
-          () => setHoveredVar(null)
-        )}
+        {Array.isArray(explanation)
+          ? renderExplanation(
+              explanation,
+              (line) => setHoveredLine(line),
+              () => setHoveredLine(null),
+              (varName) => setHoveredVar(varName),
+              () => setHoveredVar(null)
+            )
+          : <span dangerouslySetInnerHTML={{ __html: explanation }} />}
       </div>
       <pre id="outputArea" className="mt-2 p-2 bg-white text-gray-900 rounded text-sm whitespace-pre-wrap break-words">{output}</pre>
     </div>

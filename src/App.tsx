@@ -8,19 +8,25 @@ import { scenes } from '@/constants/scenes';
 import { vizReducer, initialVizState } from '@/state/vizReducer';
 import { Button } from '@/components/ui/Button';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useThemeStore } from '@/lib/themeStore';
 
 function App() {
   const [vizState, dispatch] = useReducer(vizReducer, initialVizState);
   const currentSceneIndex = vizState.currentSceneIndex;
   const [tab, setTab] = useState<'visual' | 'explanation'>('visual');
-  const [isMobile, setIsMobile] = useState(false);
+  const theme = useThemeStore((state) => state.theme);
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
+  // 监听 theme，自动为 <body> 添加/移除 dark 类
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
+    if (typeof document !== 'undefined') {
+      if (theme === 'dark') {
+        document.body.classList.add('dark');
+      } else {
+        document.body.classList.remove('dark');
+      }
+    }
+  }, [theme]);
 
   // 键盘快捷键
   useEffect(() => {
@@ -33,14 +39,14 @@ function App() {
         if (currentSceneIndex > 0) {
           dispatch({ type: 'GOTO_SCENE', sceneIndex: currentSceneIndex - 1 });
         }
-      } else if (isMobile && (e.key === 'Tab')) {
+      } else if (window.innerWidth < 768 && (e.key === 'Tab')) {
         e.preventDefault();
         setTab(tab === 'visual' ? 'explanation' : 'visual');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSceneIndex, isMobile, tab]);
+  }, [currentSceneIndex, tab]);
 
   // 处理场景切换
   const handleNext = () => {
@@ -66,8 +72,11 @@ function App() {
 
   return (
     <div className="container mx-auto p-8 bg-white text-gray-900 rounded-lg shadow-lg">
-      <div className="header text-center mb-6">
+      <div className="header text-center mb-6 flex flex-col items-center gap-2">
         <h1 className="panel-title">Python OOP 动画演示：类的创建与初始化</h1>
+        <Button onClick={toggleTheme} variant="outline" size="sm">
+          {theme === 'dark' ? '🌙 暗色模式' : '☀️ 亮色模式'}
+        </Button>
       </div>
 
       {/* 进度指示器 */}

@@ -5,6 +5,7 @@ import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import python from 'react-syntax-highlighter/dist/esm/languages/hljs/python';
 import { atomOneDark, atomOneLight } from 'react-syntax-highlighter/dist/esm/styles/hljs'; // 支持亮/暗主题
 import { useHoverStore } from '@/lib/hoverStore';
+import { useThemeStore } from '@/lib/themeStore';
 
 SyntaxHighlighter.registerLanguage('python', python);
 
@@ -13,19 +14,10 @@ interface CodePanelProps {
   highlightedLines: number[];
 }
 
-// 预留主题切换逻辑（可用 zustand/context 实现 useTheme）
-function useTheme() {
-  // 简单实现：根据 html 是否有 .dark 类判断
-  if (typeof window !== 'undefined') {
-    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  }
-  return 'light';
-}
-
 const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
   const hoveredLine = useHoverStore((state) => state.hoveredLine);
   const hoveredVar = useHoverStore((state) => state.hoveredVar);
-  const theme = useTheme();
+  const theme = useThemeStore((state) => state.theme);
 
   return (
     <div className="code-panel panel-card p-4 min-h-[400px]">
