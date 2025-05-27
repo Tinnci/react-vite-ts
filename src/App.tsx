@@ -1,11 +1,11 @@
-import { useReducer, useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { fullPythonCode } from '@/constants/pythonCode';
 import CodePanel from '@/components/CodePanel';
 import ClassDiagram from '@/components/ClassDiagram';
 import InstanceDiagram from '@/components/InstanceDiagram';
 import ExplanationOutput from '@/components/ExplanationOutput';
 import { scenes } from '@/constants/scenes';
-import { vizReducer, initialVizState } from '@/state/vizReducer';
+import { useVizStore } from '@/state/vizStore';
 import { Button } from '@/components/ui/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useThemeStore } from '@/lib/themeStore';
@@ -16,8 +16,17 @@ import ResponsiveTabs from '@/components/ResponsiveTabs';
 import { useCodeAnalysisStore } from '@/lib/codeAnalysisStore';
 
 function App() {
-  const [vizState, dispatch] = useReducer(vizReducer, initialVizState);
-  const currentSceneIndex = vizState.currentSceneIndex;
+  // 替换 useReducer
+  const {
+    currentSceneIndex,
+    Device,
+    SmartDevice,
+    d1,
+    d2,
+    sd1,
+    gotoScene,
+    reset,
+  } = useVizStore();
   const [tab, setTab] = useState<'visual' | 'explanation'>('visual');
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
@@ -42,11 +51,11 @@ function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') {
         if (currentSceneIndex < scenes.length - 1) {
-          dispatch({ type: 'GOTO_SCENE', sceneIndex: currentSceneIndex + 1 });
+          gotoScene(currentSceneIndex + 1);
         }
       } else if (e.key === 'ArrowLeft') {
         if (currentSceneIndex > 0) {
-          dispatch({ type: 'GOTO_SCENE', sceneIndex: currentSceneIndex - 1 });
+          gotoScene(currentSceneIndex - 1);
         }
       } else if (window.innerWidth < 768 && (e.key === 'Tab')) {
         e.preventDefault();
@@ -55,28 +64,28 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSceneIndex, tab]);
+  }, [currentSceneIndex, tab, gotoScene]);
 
   // 处理场景切换
   const handleNext = () => {
     if (currentSceneIndex < scenes.length - 1) {
-      dispatch({ type: 'GOTO_SCENE', sceneIndex: currentSceneIndex + 1 });
+      gotoScene(currentSceneIndex + 1);
     }
   };
 
   const handlePrev = () => {
     if (currentSceneIndex > 0) {
-      dispatch({ type: 'GOTO_SCENE', sceneIndex: currentSceneIndex - 1 });
+      gotoScene(currentSceneIndex - 1);
     }
   };
 
   const handleReset = () => {
-    dispatch({ type: 'RESET' });
+    reset();
   };
 
   // Generate output based on the current vizState
+  const vizState = { currentSceneIndex, Device, SmartDevice, d1, d2, sd1 };
   const currentOutput = scenes[currentSceneIndex].getOutput(vizState);
-
   const currentScene = scenes[currentSceneIndex];
 
   useEffect(() => {
@@ -122,7 +131,7 @@ function App() {
       <SceneOutline
         scenes={scenes}
         currentSceneIndex={currentSceneIndex}
-        onSelectScene={(idx) => dispatch({ type: 'GOTO_SCENE', sceneIndex: idx })}
+        onSelectScene={(idx) => gotoScene(idx)}
       />
 
       <div className="content-grid grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -137,7 +146,7 @@ function App() {
             <h2 className="panel-title">可视化区域</h2>
             <div id="classDiagrams">
               <AnimatePresence>
-                {vizState.Device && (
+                {Device && (
                   <motion.div
                     key="Device"
                     initial={{ opacity: 0, y: 10 }}
@@ -145,10 +154,10 @@ function App() {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <ClassDiagram className="Device" vars={vizState.Device} highlightedVars={currentScene.highlightedVars || []} />
+                    <ClassDiagram className="Device" vars={Device} highlightedVars={currentScene.highlightedVars || []} />
                   </motion.div>
                 )}
-                {vizState.SmartDevice && (
+                {SmartDevice && (
                   <motion.div
                     key="SmartDevice"
                     initial={{ opacity: 0, y: 10 }}
@@ -156,21 +165,18 @@ function App() {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <ClassDiagram className="SmartDevice" vars={vizState.SmartDevice} inheritsFrom="Device" highlightedVars={currentScene.highlightedVars || []} />
+                    <ClassDiagram className="SmartDevice" vars={SmartDevice} inheritsFrom="Device" highlightedVars={currentScene.highlightedVars || []} />
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
             <div id="instanceDiagrams">
               <AnimatePresence>
-                {Object.entries(vizState).map(([key, value]) => {
-                  if (
-                    value &&
-                    typeof value === 'object' &&
-                    'device_id' in value
-                  ) {
+                {[d1, d2, sd1].map((value, idx) => {
+                  if (value && typeof value === 'object' && 'device_id' in value) {
                     let className = 'Device';
                     if ('ip_address' in value) className = 'SmartDevice';
+                    const key = ['d1', 'd2', 'sd1'][idx];
                     return (
                       <motion.div
                         key={key}

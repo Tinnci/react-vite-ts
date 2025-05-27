@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-python';
 import 'prismjs/themes/prism.css'; // 你可以自定义样式覆盖
@@ -95,12 +95,19 @@ function renderToken(
   return <span className={`token ${token.type}`}>{token.content}</span>;
 }
 
+// 新增：解释类型
+interface ExplanationItem {
+  line: number;
+  text: string;
+}
+
 interface CodePanelProps {
   code: string;
   highlightedLines: number[];
+  explanations?: ExplanationItem[]; // 新增
 }
 
-const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
+const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanations = [] }) => {
   const hoveredLine = useHoverStore((state) => state.hoveredLine);
   const hoveredVar = useHoverStore((state) => state.hoveredVar);
   const setHoveredVar = useHoverStore((state) => state.setHoveredVar);
@@ -115,40 +122,114 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
     [lines]
   );
 
+  // 记录每行的ref
+  const lineRefs = useRef<(HTMLTableRowElement | null)[]>([]);
+  const [lineTops, setLineTops] = useState<{ [line: number]: number }>({});
+
+  // 计算每行的offsetTop
+  useEffect(() => {
+    const tops: { [line: number]: number } = {};
+    lineRefs.current.forEach((tr, idx) => {
+      if (tr) tops[idx + 1] = tr.offsetTop;
+    });
+    setLineTops(tops);
+  }, [code, tokenizedLines.length]);
+
+  // 自动滚动高亮行到可视区域
+  useEffect(() => {
+    // 优先解释高亮，其次场景高亮
+    let targetLine: number | null = hoveredLine;
+    if (!targetLine && highlightedLines.length > 0) {
+      targetLine = highlightedLines[0];
+    }
+    if (targetLine && lineRefs.current[targetLine - 1]) {
+      lineRefs.current[targetLine - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [hoveredLine, highlightedLines]);
+
+  // 解释Map，便于查找
+  const explanationMap = useMemo(() => {
+    const map = new Map<number, string>();
+    explanations.forEach(e => map.set(e.line, e.text));
+    return map;
+  }, [explanations]);
+
   return (
-    <div className="bg-panel-bg text-foreground min-h-[200px] md:min-h-[400px] font-mono text-sm overflow-x-auto rounded">
-      <table style={{ width: '100%' }}>
-        <tbody>
-          {tokenizedLines.map((tokens, idx) => {
-            const lineNumber = idx + 1;
-            const isSceneHighlight = highlightedLines.includes(lineNumber);
-            const isExplanationHighlight = hoveredLine === lineNumber;
-            const highlight = isSceneHighlight || isExplanationHighlight;
-            return (
-              <tr
-                key={lineNumber}
-                style={{
-                  background: highlight
-                    ? isExplanationHighlight
-                      ? 'rgb(var(--highlight-bg))'
-                      : 'rgba(var(--highlight-bg), 0.5)'
-                    : 'transparent',
-                  borderLeft: highlight ? '4px solid rgb(var(--highlight-border))' : undefined,
-                  color: highlight ? 'rgb(var(--highlight-fg))' : undefined,
-                  transition: 'background 0.3s, border 0.3s, color 0.3s',
-                }}
-              >
-                <td style={{ userSelect: 'none', textAlign: 'right', paddingRight: 8, color: '#aaa', width: 1 }}>
-                  {lineNumber}
-                </td>
-                <td style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', paddingRight: '1rem' }}>
-                  {renderToken(tokens, lineNumber, 0, locations, setHoveredVar, hoveredVar)}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div
+      className="relative w-full font-mono text-sm"
+      style={{ minHeight: 200, background: '#f5f5f5' }}
+    >
+      {/* Grid布局：左代码，右解释 */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+          gap: '1.5rem',
+          position: 'relative',
+        }}
+      >
+        {/* 左列：代码 */}
+        <div className="code-column" style={{ position: 'relative' }}>
+          <table style={{ width: '100%' }}>
+            <tbody>
+              {tokenizedLines.map((tokens, idx) => {
+                const lineNumber = idx + 1;
+                const isSceneHighlight = highlightedLines.includes(lineNumber);
+                const isExplanationHighlight = hoveredLine === lineNumber;
+                const highlight = isSceneHighlight || isExplanationHighlight;
+                return (
+                  <tr
+                    key={lineNumber}
+                    ref={el => (lineRefs.current[idx] = el)}
+                    style={{
+                      background: highlight
+                        ? isExplanationHighlight
+                          ? 'rgb(var(--highlight-bg))'
+                          : 'rgba(var(--highlight-bg), 0.5)'
+                        : 'transparent',
+                      borderLeft: highlight ? '4px solid rgb(var(--highlight-border))' : undefined,
+                      color: highlight ? 'rgb(var(--highlight-fg))' : undefined,
+                      transition: 'background 0.3s, border 0.3s, color 0.3s',
+                    }}
+                  >
+                    <td style={{ userSelect: 'none', textAlign: 'right', paddingRight: 8, color: '#aaa', width: 1 }}>
+                      {lineNumber}
+                    </td>
+                    <td style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', paddingRight: '1rem' }}>
+                      {renderToken(tokens, lineNumber, 0, locations, setHoveredVar, hoveredVar)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {/* 右列：解释浮层 */}
+        <div className="explanation-column" style={{ position: 'relative', minHeight: 200 }}>
+          {/* 绝对定位的解释 */}
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%' }}>
+            {explanations.map(({ line, text }) =>
+              lineTops[line] !== undefined ? (
+                <div
+                  key={line}
+                  className="p-2 mb-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100 rounded shadow explanation-float"
+                  style={{
+                    position: 'absolute',
+                    top: lineTops[line],
+                    left: 0,
+                    width: '100%',
+                    transition: 'top 0.3s, opacity 0.3s',
+                    opacity: 1,
+                    zIndex: 2,
+                  }}
+                >
+                  {text}
+                </div>
+              ) : null
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
