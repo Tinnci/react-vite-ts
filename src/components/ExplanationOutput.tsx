@@ -1,6 +1,7 @@
 import React from 'react';
 import { useHoverStore } from '@/lib/hoverStore';
 import type { ExplanationPart } from '@/constants/scenes';
+import { Panel } from './ui/Panel';
 
 interface ExplanationOutputProps {
   explanation: string | ExplanationPart[];
@@ -81,7 +82,7 @@ const ExplanationOutput: React.FC<ExplanationOutputProps> = ({ explanation, outp
   const setHoveredLine = useHoverStore((state) => state.setHoveredLine);
   const setHoveredVar = useHoverStore((state) => state.setHoveredVar);
   return (
-    <div className="output-panel panel-card mt-4 p-4 min-h-[100px]">
+    <Panel className="output-panel mt-4 p-4 min-h-[100px]">
       <h2 className="panel-title">解释 / 输出</h2>
       <div id="explanationArea" className="comment mt-2 p-2 bg-panel-bg text-foreground border-l-4 border-yellow-400 rounded text-sm">
         {Array.isArray(explanation)
@@ -98,7 +99,7 @@ const ExplanationOutput: React.FC<ExplanationOutputProps> = ({ explanation, outp
           : explanation}
       </div>
       <pre id="outputArea" className="mt-2 p-2 bg-panel-bg text-foreground rounded text-sm whitespace-pre-wrap break-words">{output}</pre>
-    </div>
+    </Panel>
   );
 };
 

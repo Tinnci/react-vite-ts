@@ -5,6 +5,7 @@ import 'prismjs/themes/prism.css'; // 你可以自定义样式覆盖
 import { useHoverStore } from '@/lib/hoverStore';
 import { useCodeAnalysisStore } from '@/lib/codeAnalysisStore';
 import type { VariableLocations } from '@/lib/pyodideService';
+import { Panel } from './ui/Panel';
 
 // Prism Token 类型声明
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -160,10 +161,7 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
   }, [explanations]);
 
   return (
-    <div
-      className="relative w-full font-mono text-sm bg-panel-bg text-foreground rounded"
-      style={{ minHeight: 200 }}
-    >
+    <Panel className="relative w-full font-mono text-sm" style={{ minHeight: 200 }}>
       <table style={{ width: '100%' }}>
         <tbody>
           {tokenizedLines.map((tokens, idx) => {
@@ -234,7 +232,7 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
           })}
         </tbody>
       </table>
-    </div>
+    </Panel>
   );
 };
 
