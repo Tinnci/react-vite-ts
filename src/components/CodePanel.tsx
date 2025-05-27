@@ -24,6 +24,8 @@ function useTheme() {
 
 const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
   const hoveredLine = useHoverStore((state) => state.hoveredLine);
+  const hoveredVar = useHoverStore((state) => state.hoveredVar);
+  const setHoveredVar = useHoverStore((state) => state.setHoveredVar);
   const theme = useTheme();
 
   return (
@@ -37,7 +39,15 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
         customStyle={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}
         lineProps={lineNumber => {
           const style: React.CSSProperties = {};
-          if (highlightedLines.includes(lineNumber) || hoveredLine === lineNumber) {
+          // 变量名 hover 高亮支持
+          let highlight = highlightedLines.includes(lineNumber) || hoveredLine === lineNumber;
+          if (hoveredVar) {
+            // 简单判断：如果该行包含 hoveredVar 变量名，则高亮
+            const codeLines = code.split('\n');
+            const lineText = codeLines[lineNumber - 1] || '';
+            if (lineText.includes(hoveredVar)) highlight = true;
+          }
+          if (highlight) {
             style.background = hoveredLine === lineNumber
               ? 'rgb(var(--highlight-bg))'
               : 'rgba(var(--highlight-bg), 0.5)';

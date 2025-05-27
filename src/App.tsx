@@ -22,6 +22,28 @@ function App() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // 键盘快捷键
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        if (currentSceneIndex < scenes.length - 1) {
+          dispatch({ type: 'GOTO_SCENE', sceneIndex: currentSceneIndex + 1 });
+          setCurrentSceneIndex(currentSceneIndex + 1);
+        }
+      } else if (e.key === 'ArrowLeft') {
+        if (currentSceneIndex > 0) {
+          dispatch({ type: 'GOTO_SCENE', sceneIndex: currentSceneIndex - 1 });
+          setCurrentSceneIndex(currentSceneIndex - 1);
+        }
+      } else if (isMobile && (e.key === 'Tab')) {
+        e.preventDefault();
+        setTab(tab === 'visual' ? 'explanation' : 'visual');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentSceneIndex, isMobile, tab]);
+
   // 处理场景切换
   const handleNext = () => {
     if (currentSceneIndex < scenes.length - 1) {

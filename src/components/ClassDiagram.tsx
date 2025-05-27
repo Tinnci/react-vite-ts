@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useHoverStore } from '@/lib/hoverStore';
 
 interface ClassDiagramProps {
   className: string;
@@ -9,6 +10,9 @@ interface ClassDiagramProps {
 }
 
 const ClassDiagram: React.FC<ClassDiagramProps> = ({ className, vars, inheritsFrom, highlightedVars = [] }) => {
+  const hoveredVar = useHoverStore((state) => state.hoveredVar);
+  const setHoveredVar = useHoverStore((state) => state.setHoveredVar);
+
   return (
     <div className="namespace-box panel-card mb-4 min-w-0">
       <h3 className="panel-subtitle">
@@ -19,7 +23,9 @@ const ClassDiagram: React.FC<ClassDiagramProps> = ({ className, vars, inheritsFr
           <motion.div
             key={name}
             layoutId={`var-${className}-${name}`}
-            className={`var mb-1 font-mono text-sm ${highlightedVars.includes(name) ? 'var-highlight' : ''}`}
+            className={`var mb-1 font-mono text-sm ${(highlightedVars.includes(name) || hoveredVar === name) ? 'var-highlight' : ''}`}
+            onMouseEnter={() => setHoveredVar(name)}
+            onMouseLeave={() => setHoveredVar(null)}
           >
             <span className="var-blue">{name}:</span>{' '}
             <span className="var-red">{JSON.stringify(value)}</span>{' '}
