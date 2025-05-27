@@ -21,7 +21,7 @@ function isVarToken(
   hoveredVar: string | null
 ): boolean {
   if (!hoveredVar) return false;
-  const varLocs = locations.get(hoveredVar);
+  const varLocs = locations[hoveredVar];
   if (!varLocs) return false;
   // 检查当前 token 是否落在变量的某个位置
   return varLocs.some((loc: any) => {
