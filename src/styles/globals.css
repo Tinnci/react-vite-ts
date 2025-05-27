@@ -3,9 +3,31 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-white;
-    @apply text-gray-900;
+  :root {
+    --background: 255 255 255;
+    --foreground: 17 24 39;
+    --panel-bg: 249 250 251;
+    --panel-border: 229 231 235;
+    --panel-title: 17 24 39;
+    --panel-subtitle: 55 65 81;
+    --panel-var-blue: 37 99 235;
+    --panel-var-red: 220 38 38;
+    --panel-var-gray: 107 114 128;
+    --primary: 79 70 229;
+    --primary-foreground: 255 255 255;
+  }
+  .dark {
+    --background: 26 32 44;
+    --foreground: 226 232 240;
+    --panel-bg: 45 55 72;
+    --panel-border: 74 85 104;
+    --panel-title: 226 232 240;
+    --panel-subtitle: 160 174 192;
+    --panel-var-blue: 96 165 250;
+    --panel-var-red: 248 113 113;
+    --panel-var-gray: 156 163 175;
+    --primary: 99 102 241;
+    --primary-foreground: 255 255 255;
   }
 }
 

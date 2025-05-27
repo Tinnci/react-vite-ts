@@ -1,4 +1,3 @@
-import { Scene } from '@/constants/scenes';
 
 export interface VizState {
   Device: { status: string; device_count: number; shared_log: string[] };
