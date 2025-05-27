@@ -104,14 +104,14 @@ function App() {
       />
 
       <div className="content-grid grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="code-panel panel-card p-6 min-h-[200px] md:min-h-[400px]">
+        <div className="code-panel panel-card p-6">
           <h2 className="panel-title">Python 代码</h2>
           <CodePanel code={fullPythonCode} highlightedLines={currentScene.highlightLines} />
         </div>
-        <div className="right-panel flex flex-col gap-6">
+        <motion.div layout transition={{ duration: 0.5, type: 'spring' }} className="right-panel flex flex-col gap-6">
           <ResponsiveTabs tab={tab} setTab={setTab} />
           {/* 可视化区域：移动端下 tab 控制显示，PC 端始终显示 */}
-          <div className={`visualization-panel panel-card p-6 min-h-[180px] md:min-h-[320px] max-h-[350px] md:max-h-[500px] overflow-y-auto ${tab !== 'visual' ? 'hidden' : ''} md:block`}>
+          <div className={`visualization-panel panel-card p-6 ${tab !== 'visual' ? 'hidden' : ''} md:block`}>
             <h2 className="panel-title">可视化区域</h2>
             <div id="classDiagrams">
               <AnimatePresence>
@@ -178,10 +178,10 @@ function App() {
             </div>
           </div>
           {/* 解释/输出区域：移动端下 tab 控制显示，PC 端始终显示 */}
-          <div className={`explanation-output-panel panel-card p-6 min-h-[120px] md:min-h-[320px] max-h-[350px] md:max-h-[500px] overflow-y-auto ${tab !== 'explanation' ? 'hidden' : ''} md:block`}>
+          <div className={`explanation-output-panel panel-card p-6 ${tab !== 'explanation' ? 'hidden' : ''} md:block`}>
             <ExplanationOutput explanation={currentScene.explanation} output={currentOutput || ""} />
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
