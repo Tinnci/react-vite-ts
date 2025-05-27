@@ -1,84 +1,84 @@
-# React + Vite + TypeScript Template (react-vite-ts)
+# React + Vite + TypeScript 教学动画项目
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Dan5py/react-vite-ts/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-A minimalistic template for kickstarting React projects with Vite and TypeScript.
+一个用于 Python OOP 概念可视化教学的现代化 React + Vite + TypeScript 项目。
 
-## 🎉 Features
+## 🎉 特性
 
-- **React** - A JavaScript library for building user interfaces.
-- **Vite** - A fast, opinionated frontend build tool.
-- **TypeScript** - A typed superset of JavaScript that compiles to plain JavaScript.
-- **Tailwind CSS** - A utility-first CSS framework.
-- **Tailwind Prettier Plugin** - A Prettier plugin for formatting Tailwind CSS classes.
-- **ESLint** - A pluggable linting utility for JavaScript and TypeScript.
-- **PostCSS** - A tool for transforming CSS with JavaScript.
-- **Autoprefixer** - A PostCSS plugin to parse CSS and add vendor prefixes.
+- **React** - 构建用户界面的 JavaScript 库。
+- **Vite** - 极速的前端构建工具。
+- **TypeScript** - 类型安全的 JavaScript 超集。
+- **Tailwind CSS** - 实用优先的 CSS 框架。
+- **Zustand** - 轻量级状态管理。
+- **ESLint** - 代码质量保障。
+- **PostCSS** & **Autoprefixer** - CSS 处理。
 
-## ⚙️ Prerequisites
+## ⚙️ 环境要求
 
-Make sure you have the following installed on your development machine:
+- Node.js (16 及以上)
+- pnpm (推荐包管理器)
 
-- Node.js (version 16 or above)
-- Yarn (package manager)
+## 🚀 快速开始
 
-## 🚀 Getting Started
-
-Follow these steps to get started with the react-vite-ts template:
-
-1. Clone the repository:
+1. 克隆仓库：
 
    ```bash
-   git clone https://github.com/Dan5py/react-vite-ts.git
+   git clone <your-repo-url>
    ```
 
-2. Navigate to the project directory:
+2. 进入项目目录：
 
    ```bash
-   cd react-vite-ts
+   cd class_animation
    ```
 
-3. Install the dependencies:
+3. 安装依赖：
 
    ```bash
-    yarn
+   pnpm install
    ```
 
-4. Start the development server:
+4. 启动开发服务器：
 
    ```bash
-   yarn dev
+   pnpm dev
    ```
 
-## 📜 Available Scripts
+## 📜 可用脚本
 
-- yarn dev - Starts the development server.
-- yarn build - Builds the production-ready code.
-- yarn lint - Runs ESLint to analyze and lint the code.
-- yarn preview - Starts the Vite development server in preview mode.
+- `pnpm dev`    启动开发服务器
+- `pnpm build`  构建生产包
+- `pnpm lint`   代码检查
+- `pnpm preview` 预览生产包
 
-## 📂 Project Structure
+## 📂 目录结构
 
-The project structure follows a standard React application layout:
-
-```python
-react-vite-ts/
-  ├── node_modules/      # Project dependencies
-  ├── public/            # Public assets
-  ├── src/               # Application source code
-  │   ├── components/    # React components
-  │   ├── styles/        # CSS stylesheets
-  │   ├── lib/           # Utility functions
-  │   ├── App.tsx        # Application entry point
-  │   └── index.tsx      # Main rendering file
-  ├── .eslintrc.json     # ESLint configuration
-  ├── index.html         # HTML entry point
-  ├── postcss.config.js  # PostCSS configuration
-  ├── tailwind.config.js # Tailwind CSS configuration
-  ├── tsconfig.json      # TypeScript configuration
-  └── vite.config.ts     # Vite configuration
+```text
+class_animation/
+  ├── public/            # 公共资源
+  ├── src/               # 源码目录
+  │   ├── components/    # 组件
+  │   ├── constants/     # 常量/静态数据
+  │   ├── lib/           # 工具函数/状态管理
+  │   ├── state/         # reducer 等状态逻辑
+  │   ├── styles/        # 样式
+  │   ├── App.tsx        # 应用入口
+  │   └── main.tsx       # 渲染入口
+  ├── .eslintrc.json     # ESLint 配置
+  ├── index.html         # HTML 入口
+  ├── postcss.config.js  # PostCSS 配置
+  ├── tailwind.config.js # Tailwind CSS 配置
+  ├── tsconfig.json      # TypeScript 配置
+  └── vite.config.ts     # Vite 配置
 ```
+
+## 📝 说明
+
+- 推荐使用 [pnpm](https://pnpm.io/) 进行依赖管理。
+- 交互动画和代码高亮均已支持动态联动。
+- 如需自定义场景或高亮，编辑 `src/constants/scenes.ts`。
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](https://choosealicense.com/licenses/mit/) file for details.
+MIT
