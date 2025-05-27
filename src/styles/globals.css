@@ -140,3 +140,7 @@
   /* 可以根据需要调整其他样式，例如文本颜色 */
   color: rgb(var(--highlight-fg));
 }
+
+.cm-hidden-line {
+  display: none;
+}
