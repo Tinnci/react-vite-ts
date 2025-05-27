@@ -6,7 +6,6 @@ import { useVizStore } from '../state/vizStore';
 import { fullPythonCode } from '../constants/pythonCode';
 import { customHighlightExtension } from '../lib/customHighlightExtension';
 import { scenes } from '../constants/scenes';
-import CodeMirror from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
 import { useThemeStore } from '../lib/themeStore';
 
@@ -14,7 +13,7 @@ interface CodePanelProps {
     pythonCode: string;
 }
 
-const CodePanel: React.FC<CodePanelProps> = ({ pythonCode }) => {
+const CodePanel: React.FC<CodePanelProps> = ({ }) => {
     const { theme } = useThemeStore();
     const { currentSceneIndex } = useVizStore();
     const scene = scenes[currentSceneIndex];

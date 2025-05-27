@@ -93,7 +93,7 @@ function App() {
   useEffect(() => {
     // 移除这里的 analyzeCode 调用，analyzeCode 应该在 vizStore 的 transformState 中根据需要触发
     // 或者有一个专门的 effect 来监听代码变化并触发分析
-    // analyzeCode(fullPythonCode);
+    analyzeCode(fullPythonCode);
   }, [analyzeCode]);
 
   useEffect(() => {

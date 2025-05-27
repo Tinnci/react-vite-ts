@@ -51,7 +51,7 @@ export const customHighlightExtension = (activeTag: string) => {
             if (tagName === activeTag && type === 'end' && highlightStartLine !== -1) {
               for (let j = highlightStartLine; j < i; j++) {
                 const lineToHighlight = doc.line(j);
-                builder.push(highlightDecoration.range(lineToHighlight.from, lineToHighlight.to));
+                builder.push(highlightDecoration.range(lineToHighlight.from));
               }
               highlightStartLine = -1; // 重置
             }
