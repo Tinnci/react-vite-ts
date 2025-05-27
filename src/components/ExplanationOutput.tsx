@@ -46,15 +46,7 @@ function renderExplanationPart(
           key={idx}
           onMouseEnter={() => handleLineEnter(part.line!)}
           onMouseLeave={handleLineLeave}
-          className="cursor-pointer underline decoration-dotted"
-          style={{
-            background: 'rgb(var(--highlight-bg))',
-            color: 'rgb(var(--highlight-fg))',
-            borderRadius: 2,
-            borderLeft: '4px solid rgb(var(--highlight-border))',
-            padding: '0 2px',
-            transition: 'background 0.3s, border 0.3s, color 0.3s',
-          }}
+          className="explanation-hover"
         >
           {children}
         </span>
@@ -65,15 +57,7 @@ function renderExplanationPart(
           key={idx}
           onMouseEnter={() => handleVarEnter(part.var!)}
           onMouseLeave={handleVarLeave}
-          className="cursor-pointer underline decoration-dotted"
-          style={{
-            background: 'rgb(var(--highlight-bg))',
-            color: 'rgb(var(--highlight-fg))',
-            borderRadius: 2,
-            borderLeft: '4px solid rgb(var(--highlight-border))',
-            padding: '0 2px',
-            transition: 'background 0.3s, border 0.3s, color 0.3s',
-          }}
+          className="explanation-hover"
         >
           {children}
         </span>
@@ -83,15 +67,7 @@ function renderExplanationPart(
       return (
         <span
           key={idx}
-          className="underline decoration-dotted"
-          style={{
-            background: 'rgb(var(--highlight-bg))',
-            color: 'rgb(var(--highlight-fg))',
-            borderRadius: 2,
-            borderLeft: '4px solid rgb(var(--highlight-border))',
-            padding: '0 2px',
-            transition: 'background 0.3s, border 0.3s, color 0.3s',
-          }}
+          className="explanation-hover"
         >
           {children}
         </span>

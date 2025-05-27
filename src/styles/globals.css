@@ -66,4 +66,10 @@
     color: rgb(var(--highlight-fg));
     transition: background 0.3s, border 0.3s, color 0.3s;
   }
+  .explanation-hover {
+    @apply cursor-pointer underline decoration-dotted rounded px-1 transition-all duration-300;
+    background: rgb(var(--highlight-bg));
+    color: rgb(var(--highlight-fg));
+    border-left: 4px solid rgb(var(--highlight-border));
+  }
 }

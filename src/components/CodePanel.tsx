@@ -33,10 +33,11 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
           // 变量名 hover 高亮支持
           let highlight = highlightedLines.includes(lineNumber) || hoveredLine === lineNumber;
           if (hoveredVar) {
-            // 简单判断：如果该行包含 hoveredVar 变量名，则高亮
+            // 精确匹配变量名（单词边界）
             const codeLines = code.split('\n');
             const lineText = codeLines[lineNumber - 1] || '';
-            if (lineText.includes(hoveredVar)) highlight = true;
+            const pattern = new RegExp(`\\b${hoveredVar}\\b`);
+            if (pattern.test(lineText)) highlight = true;
           }
           if (highlight) {
             style.background = hoveredLine === lineNumber

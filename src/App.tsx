@@ -141,39 +141,33 @@ function App() {
             </div>
             <div id="instanceDiagrams">
               <AnimatePresence>
-                {vizState.d1 && (
-                  <motion.div
-                    key="d1"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <InstanceDiagram instanceName="d1" className="Device" vars={vizState.d1} highlightedVars={currentScene.highlightedVars || []} />
-                  </motion.div>
-                )}
-                {vizState.d2 && (
-                  <motion.div
-                    key="d2"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <InstanceDiagram instanceName="d2" className="Device" vars={vizState.d2} highlightedVars={currentScene.highlightedVars || []} />
-                  </motion.div>
-                )}
-                {vizState.sd1 && (
-                  <motion.div
-                    key="sd1"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <InstanceDiagram instanceName="sd1" className="SmartDevice" vars={vizState.sd1} highlightedVars={currentScene.highlightedVars || []} />
-                  </motion.div>
-                )}
+                {Object.entries(vizState).map(([key, value]) => {
+                  if (
+                    value &&
+                    typeof value === 'object' &&
+                    'device_id' in value
+                  ) {
+                    let className = 'Device';
+                    if ('ip_address' in value) className = 'SmartDevice';
+                    return (
+                      <motion.div
+                        key={key}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <InstanceDiagram
+                          instanceName={key}
+                          className={className}
+                          vars={value}
+                          highlightedVars={currentScene.highlightedVars || []}
+                        />
+                      </motion.div>
+                    );
+                  }
+                  return null;
+                })}
               </AnimatePresence>
             </div>
           </div>
