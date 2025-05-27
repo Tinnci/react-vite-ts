@@ -132,3 +132,11 @@
 .cm-hoveredLine {
   background-color: rgba(144, 238, 144, 0.4); /* 悬停行的高亮样式 (浅绿色) */
 }
+
+/* 新增：CodeMirror 范围高亮样式 */
+.cm-highlight {
+  background-color: rgb(var(--highlight-bg));
+  border-left: 4px solid rgb(var(--highlight-border));
+  /* 可以根据需要调整其他样式，例如文本颜色 */
+  color: rgb(var(--highlight-fg));
+}

@@ -10,7 +10,7 @@ export type ExplanationPart =
 
 export interface Scene {
   title: string;
-  highlightLines: number[];
+  highlightTag?: string;
   highlightedVars?: string[];
   explanation: string | ExplanationPart[];
   getOutput: (state: VizState) => string;
@@ -20,7 +20,7 @@ export interface Scene {
 export const scenes: Scene[] = [
   {
     title: '定义 Device 类及类变量',
-    highlightLines: [1, 2, 3, 4, 5, 6],
+    highlightTag: 'define_device_class',
     highlightedVars: ['status', 'device_count', 'shared_log'],
     explanation: [
       { type: 'text', content: '定义 ' },
@@ -42,7 +42,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '定义 Device 构造方法',
-    highlightLines: [7, 8, 9, 10, 11, 12, 13],
+    highlightTag: 'define_device_constructor',
     explanation: [
       { type: 'text', content: '定义 ' },
       { type: 'hover', content: '<code>Device</code>' },
@@ -57,7 +57,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '定义类方法',
-    highlightLines: [15, 16, 17, 18, 19, 20, 21],
+    highlightTag: 'define_class_method',
     explanation: [
       { type: 'text', content: '定义类方法 ' },
       { type: 'hover', content: '<code>get_device_count</code>', var: 'get_device_count' },
@@ -74,7 +74,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '定义实例方法',
-    highlightLines: [22, 23, 24, 25, 26, 27, 28, 29, 30],
+    highlightTag: 'define_instance_method',
     explanation: [
       { type: 'text', content: '定义实例方法 ' },
       { type: 'hover', content: '<code>get_info</code>', var: 'get_info' },
@@ -89,7 +89,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '定义 SmartDevice 子类',
-    highlightLines: [32, 33, 34],
+    highlightTag: 'define_smartdevice_class',
     explanation: [
       { type: 'text', content: '定义 ' },
       { type: 'hover', content: '<code>SmartDevice</code>' },
@@ -108,7 +108,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '定义 SmartDevice 的方法',
-    highlightLines: [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46],
+    highlightTag: 'define_smartdevice_method',
     explanation: [
       { type: 'text', content: '定义 ' },
       { type: 'hover', content: '<code>SmartDevice</code>' },
@@ -127,7 +127,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '创建 Device 实例 d1',
-    highlightLines: [50, 51],
+    highlightTag: 'create_device_instance_d1',
     explanation: [
       { type: 'text', content: '创建 ' },
       { type: 'hover', content: '<code>Device</code>' },
@@ -161,7 +161,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '创建 Device 实例 d2',
-    highlightLines: [53, 54],
+    highlightTag: 'create_device_instance_d2',
     explanation: [
       { type: 'text', content: '创建 ' },
       { type: 'hover', content: '<code>Device</code>' },
@@ -187,7 +187,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '实例变量的独立性',
-    highlightLines: [56, 57],
+    highlightTag: 'instance_variable_independence',
     explanation: [
       { type: 'text', content: '修改实例 ' },
       { type: 'hover', content: '<code>d1</code>', var: 'd1' },
@@ -206,7 +206,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '实例变量遮蔽类变量',
-    highlightLines: [59, 60],
+    highlightTag: 'instance_variable_shadowing_class_variable',
     explanation: [
       { type: 'text', content: '给实例 ' },
       { type: 'hover', content: '<code>d1</code>', var: 'd1' },
@@ -238,7 +238,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '通过类方法修改类变量',
-    highlightLines: [62, 63],
+    highlightTag: 'class_method_modifying_class_variable',
     explanation: [
       { type: 'text', content: '通过类方法 ' },
       { type: 'hover', content: '<code>Device.change_global_status("Maintenance")</code>', line: 19 },
@@ -264,7 +264,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '可变类变量的共享',
-    highlightLines: [65, 66, 67],
+    highlightTag: 'shared_class_variable',
     explanation: [
       { type: 'text', content: '实例 ' },
       { type: 'hover', content: '<code>d1</code>', var: 'd1' },
@@ -288,7 +288,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '创建 SmartDevice 实例 sd1',
-    highlightLines: [69, 70],
+    highlightTag: 'create_smartdevice_instance_sd1',
     explanation: [
       { type: 'text', content: '创建 ' },
       { type: 'hover', content: '<code>SmartDevice</code>' },
@@ -324,7 +324,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '子类修改继承的类变量',
-    highlightLines: [65, 67],
+    highlightTag: 'subclass_modifying_inherited_variable',
     highlightedVars: ['status'],
     explanation: [
       { type: 'text', content: '修改 ' },
@@ -356,7 +356,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '打印所有对象信息',
-    highlightLines: [71, 72, 73, 74, 75],
+    highlightTag: 'print_all_objects_info',
     explanation: [
       { type: 'text', content: '最后，我们打印所有对象的信息来回顾它们当前的状态。' },
     ],

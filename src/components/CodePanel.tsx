@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView, Decoration, DecorationSet } from '@codemirror/view';
 import { python } from '@codemirror/lang-python';
-import { StateField, StateEffect, Transaction, Range, RangeSet } from '@codemirror/state';
+import { StateField, StateEffect, Transaction, Range, RangeSetBuilder } from '@codemirror/state';
 
 import { useHoverStore } from '@/lib/hoverStore';
 import { useCodeAnalysisStore } from '@/lib/codeAnalysisStore';
@@ -13,14 +13,16 @@ import { Panel } from './ui/Panel';
 
 import { fullPythonCode } from '@/constants/pythonCode';
 import { useThemeStore } from '@/lib/themeStore';
+import { createHighlightMap } from '@/lib/codeHighlightingUtils'; // 导入新的工具函数
 
 interface CodePanelProps {}
 
-// 定义一个接口来描述高亮范围
+// 定义一个接口来描述高亮范围 (可以是行号或字符范围)
 export interface HighlightRange {
-  from: number; // 起始行号 (从 1 开始)
-  to: number;   // 结束行号 (从 1 开始)
+  from: number; // 起始位置 (行号或字符偏移)
+  to: number;   // 结束位置 (行号或字符偏移)
   className?: string; // 应用的 CSS 类名 (可选)
+  type: 'line' | 'range'; // 新增：指定高亮类型
 }
 
 // 定义一个 StateEffect 类型，用于从外部更新高亮范围数组
@@ -36,44 +38,62 @@ const paragraphHighlightMark = (className: string) => Decoration.line({
   attributes: { class: className }
 });
 
+// 定义用于范围高亮的 Decoration
+const rangeHighlightMark = (className: string) => Decoration.mark({
+  attributes: { class: className }
+});
+
 // Define a StateField to manage decorations
 const highlightField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
   update(value: DecorationSet, transaction: Transaction) {
-    // Apply changes from the transaction to the existing decorations
-    // value = value.map(transaction.changes); // 这行在新逻辑中不再需要这样简单映射
+    // 应用来自 transaction 的更改到现有装饰 (对于不通过 effect 更新的装饰有用)
+    // value = value.map(transaction.changes); 
+
+    let decorations: Range<Decoration>[] = [];
 
     // 检查是否有来自外部的 highlightEffect
     for (const effect of transaction.effects) {
       if (effect.is(highlightEffect)) {
         const highlightRanges = effect.value;
-        const decorations: Range<Decoration>[] = [];
+        
+        const builder = new RangeSetBuilder<Decoration>();
 
         highlightRanges.forEach(range => {
-          const fromLine = Math.max(1, range.from);
-          const toLine = Math.min(transaction.state.doc.lines, range.to);
-          const className = range.className || 'cm-highlight'; // 默认类名
+          if (range.type === 'line') {
+            // 处理行高亮
+            const fromLine = Math.max(1, range.from);
+            const toLine = Math.min(transaction.state.doc.lines, range.to);
+            const className = range.className || 'cm-activeLine';
 
-          for (let i = fromLine; i <= toLine; i++) {
-            const line = transaction.state.doc.line(i);
-             // 根据是否有 className 选择不同的 Decoration
-            const mark = range.className ? paragraphHighlightMark(range.className) : activeLineMark;
-            decorations.push(mark.range(line.from));
+            for (let i = fromLine; i <= toLine; i++) {
+              const line = transaction.state.doc.line(i);
+              const mark = range.className ? paragraphHighlightMark(range.className) : activeLineMark;
+              builder.add(line.from, line.from, mark);
+            }
+          } else if (range.type === 'range') {
+            // 处理范围高亮 (基于字符偏移量)
+            const className = range.className || 'cm-highlight'; // 默认类名
+            const mark = rangeHighlightMark(className);
+            builder.add(range.from, range.to, mark);
           }
         });
-
-        // 创建一个新的 DecorationSet 从更新的 decorations 数组
-        // 使用 RangeSet.of 替换 Decoration.set
-        return RangeSet.of(decorations, true); // true 表示按位置排序装饰
+        
+        return builder.finish();
       }
     }
 
-    // 如果没有 highlightEffect，保留旧的装饰并映射到新文档位置
-    return value.map(transaction.changes);
+    // 如果没有 highlightEffect，并且有旧的装饰，映射它们（对于不通过 effect 管理的装饰）
+    // For this specific field which is fully managed by effects, this might not be needed
+    // But keeping it as a fallback for other potential decorations
+     return value.map(transaction.changes);
   },
   // Provide the decorations to the EditorView
   provide: f => EditorView.decorations.from(f),
 });
+
+// 在组件外部或 memo 中计算一次代码标记映射
+const codeHighlightMap = createHighlightMap(fullPythonCode);
 
 const CodePanel: React.FC<CodePanelProps> = () => {
   useCodeAnalysisStore();
@@ -84,7 +104,7 @@ const CodePanel: React.FC<CodePanelProps> = () => {
 
   const { currentSceneIndex } = useVizStore();
   const currentScene = scenes[currentSceneIndex];
-  const highlightedLines = currentScene.highlightLines;
+  // const highlightedLines = currentScene.highlightLines; // 不再直接使用行号数组
 
   const code = fullPythonCode;
   
@@ -97,23 +117,36 @@ const CodePanel: React.FC<CodePanelProps> = () => {
   // Effect to update CodeMirror decorations when state changes
   useEffect(() => {
     if (editorRef.current) {
-      // 构建 HighlightRange[] 数组
       const highlights: HighlightRange[] = [];
 
-      // 添加当前执行行的高亮 (使用默认类名或特定类名)
-      highlightedLines.forEach(line => {
-         if (line > 0 && line <= editorRef.current!.state.doc.lines) {
-            highlights.push({ from: line, to: line, className: 'cm-activeLine' }); // 使用现有的 cm-activeLine 类
-         }
-      });
-
-      // 添加悬停行的高亮 (使用不同的类名)
-      if (hoveredLine !== null && hoveredLine > 0 && hoveredLine <= editorRef.current!.state.doc.lines) {
-        // 确保悬停行不与高亮行重复，或者根据优先级处理
-        // 为了简单，这里直接添加，实际应用中可能需要更复杂的逻辑
-        if (!highlightedLines.includes(hoveredLine)) {
-             highlights.push({ from: hoveredLine, to: hoveredLine, className: 'cm-hoveredLine' }); // 假设有一个 cm-hoveredLine 类
+      // --- 添加基于 Tag 的代码块高亮 ---
+      if (currentScene.highlightTag) {
+        const range = codeHighlightMap.get(currentScene.highlightTag);
+        if (range) {
+          // CodeMirror 范围是 [from, to), 所以结束位置需要加 1 (如果 to 是字符偏移量)
+          // 但在 createHighlightMap 中，我们获取的是结束标记的起始位置，所以这里的 range.to 已经是结束位置
+          // 我们需要获取结束标记那一行的结束字符位置，或者高亮到结束标记的起始位置即可
+          // 让我们先高亮到结束标记的起始位置进行测试
+          // 确保范围有效
+           if (range.from >= 0 && range.to >= range.from) {
+               highlights.push({ from: range.from, to: range.to, className: 'cm-highlight', type: 'range' }); // 使用 type: 'range'
+           }
         }
+      }
+
+      // --- 添加悬停行的高亮 (保持不变) ---
+      if (hoveredLine !== null && editorRef.current.state.doc.line(hoveredLine)) { // 检查行号是否存在
+          const line = editorRef.current.state.doc.line(hoveredLine);
+           // 确保悬停行不与当前场景高亮范围重叠 (简单检查，复杂场景可能需要更多逻辑)
+           const currentSceneRange = currentScene.highlightTag ? codeHighlightMap.get(currentScene.highlightTag) : null;
+           let isOverlappingWithSceneHighlight = false;
+           if (currentSceneRange && hoveredLine >= editorRef.current.state.doc.lineAt(currentSceneRange.from).number && hoveredLine <= editorRef.current.state.doc.lineAt(currentSceneRange.to).number) {
+               isOverlappingWithSceneHighlight = true;
+           }
+
+           if (!isOverlappingWithSceneHighlight) {
+                highlights.push({ from: hoveredLine, to: hoveredLine, className: 'cm-hoveredLine', type: 'line' }); // 使用 type: 'line'
+           }
       }
 
       // TODO: 根据 hoveredElement 和 pinnedElements 添加更多高亮范围
@@ -124,19 +157,23 @@ const CodePanel: React.FC<CodePanelProps> = () => {
         effects: highlightEffect.of(highlights),
       });
 
-      // 滚动到第一个高亮行如果它不在视图中
-      if (highlightedLines.length > 0 && editorRef.current) {
-        const firstHighlightedLine = highlightedLines[0];
-        // Check if the line number is valid within the current document
-        if (firstHighlightedLine > 0 && firstHighlightedLine <= editorRef.current.state.doc.lines) {
-           const { from } = editorRef.current.state.doc.line(firstHighlightedLine);
+      // 滚动到当前场景高亮区域的起始位置
+      if (currentScene.highlightTag) {
+         const range = codeHighlightMap.get(currentScene.highlightTag);
+         if (range && editorRef.current) {
+             // 滚动到范围的起始位置
+             editorRef.current.dispatch({
+               effects: EditorView.scrollIntoView(range.from, { y: 'center' }),
+             });
+         }
+      } else if (hoveredLine !== null && editorRef.current) { // 如果没有场景高亮，滚动到悬停行
+           const line = editorRef.current.state.doc.line(hoveredLine);
            editorRef.current.dispatch({
-             effects: EditorView.scrollIntoView(from, { y: 'center' }),
+             effects: EditorView.scrollIntoView(line.from, { y: 'center' }),
            });
-        }
       }
     }
-  }, [highlightedLines, hoveredLine, hoveredElement, pinnedElements, editorRef.current]);
+  }, [currentScene.highlightTag, hoveredLine, hoveredElement, pinnedElements, editorRef.current]);
 
   // TODO: Implement click handler for pinning elements using EditorView.domEventHandlers
   // This will require mapping CodeMirror positions back to our element names and types using locations.
