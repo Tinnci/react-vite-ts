@@ -1,78 +1,47 @@
-import React, { useEffect, useRef, useMemo } from 'react';
-import { EditorView } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
+import React, { useEffect, useRef } from 'react';
+import CodeMirror, { EditorView } from '@uiw/react-codemirror';
 import { python } from '@codemirror/lang-python';
-import { basicSetup } from 'codemirror';
-import { githubDark } from '@uiw/codemirror-theme-github';
-import {
-  customHighlightExtension,
-  activeTagCompartment,
-  setActiveTagEffect
-} from '../lib/customHighlightExtension';
-import { useVizStore } from '../state/vizStore';
-import { fullPythonCode } from '../constants/pythonCode';
-import { scenes } from '../constants/scenes';
-import { useThemeStore } from '../lib/themeStore';
+// import { useTheme } from 'next-themes'; // 暂时注释掉，根据项目实际情况调整
+import { customHighlightExtension, setActiveTagEffect } from '../lib/customHighlightExtension'; // <--- Import new items
 
 interface CodePanelProps {
   code: string;
-  activeTag: string;
+  activeTag: string; // activeTag 不再是可选的
+  theme: 'dark' | 'light'; // 添加 theme 属性
 }
 
-const CodePanel: React.FC<CodePanelProps> = ({ code, activeTag }) => {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const viewRef = useRef<EditorView | null>(null);
-  const { theme } = useThemeStore();
-  const { currentSceneIndex } = useVizStore();
-  const scene = scenes[currentSceneIndex];
-  const highlightTag = scenes[currentSceneIndex]?.highlightTag || '';
+const CodePanel: React.FC<CodePanelProps> = ({ code, activeTag, theme }) => { // 接收 theme 属性
+  // const { theme } = useTheme(); // 暂时注释掉，根据项目实际情况调整
+  const viewRef = useRef<{ view?: EditorView }>(null); // Ref to access CodeMirror view
 
-  const compartmentRef = useRef(activeTagCompartment);
-
+  // 使用 useEffect 来分发 activeTag 的变化
   useEffect(() => {
-    if (editorRef.current && !viewRef.current) {
-      const extensions = [
-        basicSetup,
-        python(),
-        githubDark,
-        customHighlightExtension
-      ];
-
-      const startState = EditorState.create({
-        doc: code,
-        extensions,
-      });
-
-      viewRef.current = new EditorView({
-        state: startState,
-        parent: editorRef.current,
-      });
-    }
-
-    if (viewRef.current && viewRef.current.state.doc.toString() !== code) {
-        viewRef.current.dispatch({
-            changes: { from: 0, to: viewRef.current.state.doc.length, insert: code }
-        });
-    }
-
-    return () => {
-      if (viewRef.current) {
-        viewRef.current.destroy();
-        viewRef.current = null;
-      }
-    };
-  }, [code]);
-
-  useEffect(() => {
-    if (viewRef.current) {
-      const effect = setActiveTagEffect.of(activeTag);
-      viewRef.current.dispatch({
-        effects: [effect]
+    if (viewRef.current?.view && activeTag !== undefined) {
+      viewRef.current.view.dispatch({
+        effects: setActiveTagEffect.of(activeTag),
       });
     }
   }, [activeTag]);
 
-  return <div ref={editorRef} style={{ height: '100%', overflow: 'auto' }} />;
+  // 扩展现在是静态的，不再需要 useMemo
+  const extensions = [
+    python(),
+    EditorView.lineWrapping,
+    customHighlightExtension, // <--- 使用统一的扩展
+  ];
+
+  return (
+    <div className="flex-1 overflow-auto h-full">
+      <CodeMirror
+        ref={viewRef} // <--- 附加 ref
+        value={code}
+        theme={theme === 'dark' ? 'dark' : 'light'} // 重新启用 theme 属性
+        extensions={extensions}
+        readOnly
+        style={{ height: '100%' }}
+      />
+    </div>
+  );
 };
 
 export default CodePanel;
