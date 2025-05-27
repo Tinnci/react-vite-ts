@@ -16,7 +16,7 @@ const Diagram: React.FC<DiagramProps> = ({ title, varTypeLabel, vars, highlighte
   const hoveredVar = useHoverStore((state) => state.hoveredVar);
   const setHoveredVar = useHoverStore((state) => state.setHoveredVar);
   return (
-    <div className={`namespace-box panel-card mb-4 min-w-0 ${className}`}>
+    <div className={`namespace-box bg-panel-bg text-foreground border border-panel-border rounded-lg mb-4 min-w-0 ${className}`}>
       <h3 className="panel-subtitle">
         {title} {inheritsFrom && `(继承自 ${inheritsFrom})`}
       </h3>

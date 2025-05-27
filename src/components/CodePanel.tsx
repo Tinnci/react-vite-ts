@@ -20,14 +20,14 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
   const theme = useThemeStore((state) => state.theme);
 
   return (
-    <div className="code-panel panel-card p-4 min-h-[400px]">
+    <div className="bg-panel-bg text-foreground min-h-[200px] md:min-h-[400px]">
       {/* Use SyntaxHighlighter component */}
       <SyntaxHighlighter
         language="python"
         style={theme === 'dark' ? atomOneDark : atomOneLight} // 动态切换主题
         showLineNumbers={true} // Show line numbers
         wrapLongLines={true} // 关键：强制长行换行
-        customStyle={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}
+        customStyle={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: 'transparent', color: 'inherit' }}
         lineProps={lineNumber => {
           const style: React.CSSProperties = {};
           // 变量名 hover 高亮支持
