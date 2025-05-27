@@ -9,6 +9,10 @@ import { vizReducer, initialVizState } from '@/state/vizReducer';
 import { Button } from '@/components/ui/Button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useThemeStore } from '@/lib/themeStore';
+import ProgressBar from '@/components/ProgressBar';
+import SceneOutline from '@/components/SceneOutline';
+import StepControls from '@/components/StepControls';
+import ResponsiveTabs from '@/components/ResponsiveTabs';
 
 function App() {
   const [vizState, dispatch] = useReducer(vizReducer, initialVizState);
@@ -83,35 +87,21 @@ function App() {
       <div className="mb-2 text-center text-sm text-panel-subtitle">
         步骤 {currentSceneIndex + 1} / {scenes.length}
       </div>
-      {/* 顶部进度条 */}
-      <div className="w-full bg-panel-border rounded-full h-2.5 mb-4">
-        <div
-          className="bg-primary h-2.5 rounded-full transition-all duration-300"
-          style={{ width: `${((currentSceneIndex + 1) / scenes.length) * 100}%` }}
-        ></div>
-      </div>
+      <ProgressBar currentSceneIndex={currentSceneIndex} totalScenes={scenes.length} />
 
-      <div className="controls text-center mb-6">
-        <Button onClick={handleReset} className="mr-2">重置</Button>
-        <Button onClick={handlePrev} className="mr-2" disabled={currentSceneIndex === 0}>上一步</Button>
-        <Button onClick={handleNext} disabled={currentSceneIndex === scenes.length - 1}>下一步</Button>
-      </div>
+      <StepControls
+        onReset={handleReset}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        currentSceneIndex={currentSceneIndex}
+        totalScenes={scenes.length}
+      />
 
-      {/* 场景目录/大纲 */}
-      <div className="scene-outline flex flex-wrap justify-center gap-2 mb-6">
-        {scenes.map((scene, idx) => (
-          <button
-            key={scene.title}
-            className={`px-3 py-1 rounded text-xs border transition-all duration-200 ${idx === currentSceneIndex ? 'bg-primary text-white border-primary' : 'bg-panel-bg text-panel-subtitle border-panel-border hover:bg-primary/10'}`}
-            style={{ fontWeight: idx === currentSceneIndex ? 'bold' : 'normal' }}
-            onClick={() => {
-              dispatch({ type: 'GOTO_SCENE', sceneIndex: idx });
-            }}
-          >
-            {idx + 1}. {scene.title}
-          </button>
-        ))}
-      </div>
+      <SceneOutline
+        scenes={scenes}
+        currentSceneIndex={currentSceneIndex}
+        onSelectScene={(idx) => dispatch({ type: 'GOTO_SCENE', sceneIndex: idx })}
+      />
 
       <div className="content-grid grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="code-panel panel-card p-6 min-h-[200px] md:min-h-[400px]">
@@ -119,17 +109,7 @@ function App() {
           <CodePanel code={fullPythonCode} highlightedLines={currentScene.highlightLines} />
         </div>
         <div className="right-panel flex flex-col gap-6">
-          {/* 移动端 Tab 切换器，仅在 md 以下显示 */}
-          <div className="flex mb-2 md:hidden">
-            <button
-              className={`flex-1 py-2 rounded-t-lg border-b-2 transition-all duration-200 ${tab === 'visual' ? 'border-primary text-primary' : 'border-panel-border text-panel-subtitle'}`}
-              onClick={() => setTab('visual')}
-            >可视化区域</button>
-            <button
-              className={`flex-1 py-2 rounded-t-lg border-b-2 transition-all duration-200 ${tab === 'explanation' ? 'border-primary text-primary' : 'border-panel-border text-panel-subtitle'}`}
-              onClick={() => setTab('explanation')}
-            >解释 / 输出</button>
-          </div>
+          <ResponsiveTabs tab={tab} setTab={setTab} />
           {/* 可视化区域：移动端下 tab 控制显示，PC 端始终显示 */}
           <div className={`visualization-panel panel-card p-6 min-h-[180px] md:min-h-[320px] max-h-[350px] md:max-h-[500px] overflow-y-auto ${tab !== 'visual' ? 'hidden' : ''} md:block`}>
             <h2 className="panel-title">可视化区域</h2>
