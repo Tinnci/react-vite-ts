@@ -25,8 +25,8 @@ function renderExplanationPart(
         return <code key={i} className="px-1 rounded bg-panel-bg text-panel-var-blue font-mono text-sm">{codeText}</code>;
       }
       // 处理 <br>
-      if (seg === '<br>' || seg === '<br/>') return <br key={i} />;
-      return <span key={i}>{seg}</span>;
+      // 直接渲染 HTML，支持 <br>
+      return <span key={i} dangerouslySetInnerHTML={{ __html: seg }} />;
     });
   }
   if (part.type === 'hover') {

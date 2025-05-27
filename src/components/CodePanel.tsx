@@ -107,16 +107,18 @@ interface CodePanelProps {
   explanations?: ExplanationItem[];
 }
 
+const HOVER_DELAY = 180; // ms
+const LEAVE_DELAY = 120; // ms
+
 const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanations = [] }) => {
   const hoveredLine = useHoverStore((state) => state.hoveredLine);
+  const setHoveredLine = useHoverStore((state) => state.setHoveredLine);
   const hoveredVar = useHoverStore((state) => state.hoveredVar);
   const setHoveredVar = useHoverStore((state) => state.setHoveredVar);
   const locations = useCodeAnalysisStore((state) => state.locations);
 
   // 按行分割代码
   const lines = useMemo(() => code.trim().split('\n'), [code]);
-
-  // 预处理每行的 token
   const tokenizedLines = useMemo(
     () => lines.map((line) => Prism.tokenize(line, Prism.languages.python)),
     [lines]
@@ -126,8 +128,9 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
   const lineRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const [lineTops, setLineTops] = useState<{ [line: number]: number }>({});
 
-  // 解释 hover/选中状态
-  const [hoveredExplanationLine, setHoveredExplanationLine] = useState<number | null>(null);
+  // hover延迟定时器
+  const hoverTimeout = useRef<number | null>(null);
+  const leaveTimeout = useRef<number | null>(null);
 
   // 计算每行的offsetTop
   useEffect(() => {
@@ -140,7 +143,6 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
 
   // 自动滚动高亮行到可视区域
   useEffect(() => {
-    // 优先解释高亮，其次场景高亮
     let targetLine: number | null = hoveredLine;
     if (!targetLine && highlightedLines.length > 0) {
       targetLine = highlightedLines[0];
@@ -157,100 +159,81 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
     return map;
   }, [explanations]);
 
-  // 动态Grid列宽
-  const showExplanation = explanations.length > 0 && hoveredExplanationLine !== null;
-  const gridTemplateColumns = explanations.length === 0
-    ? '1fr'
-    : showExplanation
-      ? 'minmax(0, 1fr) minmax(0, 1fr)'
-      : '1fr 0px';
-
   return (
     <div
       className="relative w-full font-mono text-sm bg-panel-bg text-foreground rounded"
       style={{ minHeight: 200 }}
     >
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns,
-          gap: '1.5rem',
-          position: 'relative',
-          transition: 'grid-template-columns 0.3s',
-        }}
-      >
-        {/* 左列：代码 */}
-        <div className="code-column" style={{ position: 'relative', transition: 'width 0.3s' }}>
-          <table style={{ width: '100%' }}>
-            <tbody>
-              {tokenizedLines.map((tokens, idx) => {
-                const lineNumber = idx + 1;
-                const isSceneHighlight = highlightedLines.includes(lineNumber);
-                const isExplanationHighlight = hoveredLine === lineNumber;
-                const highlight = isSceneHighlight || isExplanationHighlight;
-                return (
-                  <tr
-                    key={lineNumber}
-                    ref={el => (lineRefs.current[idx] = el)}
-                    style={{
-                      background: highlight
-                        ? isExplanationHighlight
-                          ? 'rgb(var(--highlight-bg))'
-                          : 'rgba(var(--highlight-bg), 0.5)'
-                        : 'transparent',
-                      borderLeft: highlight ? '4px solid rgb(var(--highlight-border))' : undefined,
-                      color: highlight ? 'rgb(var(--highlight-fg))' : undefined,
-                      transition: 'background 0.3s, border 0.3s, color 0.3s',
-                    }}
-                    onMouseEnter={() => {
-                      if (explanationMap.has(lineNumber)) setHoveredExplanationLine(lineNumber);
-                    }}
-                    onMouseLeave={() => {
-                      if (explanationMap.has(lineNumber)) setHoveredExplanationLine(null);
-                    }}
-                  >
-                    <td style={{ userSelect: 'none', textAlign: 'right', paddingRight: 8, color: '#aaa', width: 1 }}>
-                      {lineNumber}
-                    </td>
-                    <td style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', paddingRight: '1rem' }}>
-                      {renderToken(tokens, lineNumber, 0, locations, setHoveredVar, hoveredVar)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {/* 右列：解释浮层 */}
-        {explanations.length > 0 && (
-          <div className="explanation-column" style={{ position: 'relative', minHeight: 200, transition: 'width 0.3s' }}>
-            {/* 绝对定位的解释，仅在 hover/选中时显示 */}
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%' }}>
-              {explanations.map(({ line, text }) =>
-                lineTops[line] !== undefined && hoveredExplanationLine === line ? (
-                  <div
-                    key={line}
-                    className="p-2 mb-1 rounded shadow explanation-float bg-panel-bg text-foreground"
-                    style={{
-                      position: 'absolute',
-                      top: lineTops[line],
-                      left: 0,
-                      width: '100%',
-                      transition: 'top 0.3s, opacity 0.3s',
-                      opacity: 1,
-                      zIndex: 2,
-                    }}
-                    onMouseEnter={() => setHoveredExplanationLine(line)}
-                    onMouseLeave={() => setHoveredExplanationLine(null)}
-                  >
-                    {text}
-                  </div>
-                ) : null
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      <table style={{ width: '100%' }}>
+        <tbody>
+          {tokenizedLines.map((tokens, idx) => {
+            const lineNumber = idx + 1;
+            const isSceneHighlight = highlightedLines.includes(lineNumber);
+            const isExplanationHighlight = hoveredLine === lineNumber;
+            const highlight = isSceneHighlight || isExplanationHighlight;
+            const explanation = explanationMap.get(lineNumber);
+            // hover事件处理
+            const handleEnter = () => {
+              if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+              if (leaveTimeout.current) clearTimeout(leaveTimeout.current);
+              hoverTimeout.current = setTimeout(() => {
+                setHoveredLine(lineNumber);
+              }, HOVER_DELAY);
+            };
+            const handleLeave = () => {
+              if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+              leaveTimeout.current = setTimeout(() => {
+                setHoveredLine(null);
+              }, LEAVE_DELAY);
+            };
+            // 浮层也要保持hover
+            const handlePopoverEnter = () => {
+              if (leaveTimeout.current) clearTimeout(leaveTimeout.current);
+            };
+            const handlePopoverLeave = () => {
+              leaveTimeout.current = setTimeout(() => {
+                setHoveredLine(null);
+              }, LEAVE_DELAY);
+            };
+            return (
+              <tr
+                key={lineNumber}
+                ref={el => (lineRefs.current[idx] = el)}
+                className={`code-line ${highlight ? 'interactive-highlight' : ''}`}
+                style={{ position: 'relative', transition: 'background 0.2s, color 0.2s' }}
+                onMouseEnter={explanation ? handleEnter : undefined}
+                onMouseLeave={explanation ? handleLeave : undefined}
+              >
+                <td style={{ userSelect: 'none', textAlign: 'right', paddingRight: 8, color: '#aaa', width: 1 }}>
+                  {lineNumber}
+                </td>
+                <td style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', paddingRight: '1rem', position: 'relative' }}>
+                  {renderToken(tokens, lineNumber, 0, locations, setHoveredVar, hoveredVar)}
+                  {/* 解释浮层，绝对定位在右侧 */}
+                  {explanation && hoveredLine === lineNumber && (
+                    <div
+                      className="explanation-popover visible bg-panel-bg text-foreground shadow-lg rounded p-3 ml-4"
+                      style={{
+                        position: 'absolute',
+                        left: '100%',
+                        top: 0,
+                        minWidth: 240,
+                        maxWidth: 340,
+                        zIndex: 10,
+                        boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)',
+                      }}
+                      onMouseEnter={handlePopoverEnter}
+                      onMouseLeave={handlePopoverLeave}
+                    >
+                      {explanation}
+                    </div>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };
