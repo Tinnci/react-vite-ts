@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { fullPythonCode } from '@/constants/pythonCode';
 import CodePanel from '@/components/CodePanel';
 import ClassDiagram from '@/components/ClassDiagram';
 import InstanceDiagram from '@/components/InstanceDiagram';

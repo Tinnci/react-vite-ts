@@ -33,7 +33,7 @@ interface HoverState {
   togglePinElement: (element: HoveredElement) => void;
 }
 
-export const useHoverStore = create<HoverState>((set, get) => ({
+export const useHoverStore = create<HoverState>((set) => ({
   hoveredElement: null,
   setHoveredElement: (element) => set({ hoveredElement: element }),
   hoveredLine: null,

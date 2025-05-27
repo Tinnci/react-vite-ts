@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 
 import CodeMirror from '@uiw/react-codemirror';
-import { EditorView, Decoration, ViewPlugin, ViewUpdate, DecorationSet } from '@codemirror/view';
+import { EditorView, Decoration, DecorationSet } from '@codemirror/view';
 import { python } from '@codemirror/lang-python';
-import { EditorState, StateField, StateEffect, Transaction, Range } from '@codemirror/state';
+import { StateField, StateEffect, Transaction, Range } from '@codemirror/state';
 
 import { useHoverStore } from '@/lib/hoverStore';
 import { useCodeAnalysisStore } from '@/lib/codeAnalysisStore';
@@ -25,17 +25,11 @@ const activeLineMark = Decoration.line({
 });
 
 // TODO: Define marks for hovered and pinned elements
-const highlightMark = Decoration.mark({
-  attributes: { class: 'cm-highlighted' }
-});
 
-const pinnedMark = Decoration.mark({
-  attributes: { class: 'cm-pinned' }
-});
 
 // Define a StateField to manage decorations
 const highlightField = StateField.define<DecorationSet>({
-  create: (state: EditorState) => Decoration.none,
+  create: () => Decoration.none,
   update(value: DecorationSet, transaction: Transaction) {
     // Apply changes from the transaction to the existing decorations
     value = value.map(transaction.changes);
@@ -43,7 +37,7 @@ const highlightField = StateField.define<DecorationSet>({
     // Process highlight effects
     for (const effect of transaction.effects) {
       if (effect.is(highlightEffect)) {
-        const { line, hovered, pinned } = effect.value;
+        const { line } = effect.value;
         const decorations: Range<Decoration>[] = [];
 
         // Highlight current execution line(s)
@@ -68,17 +62,15 @@ const highlightField = StateField.define<DecorationSet>({
 });
 
 const CodePanel: React.FC<CodePanelProps> = () => {
-  const { locations } = useCodeAnalysisStore();
+  useCodeAnalysisStore();
 
   const hoveredLine = useHoverStore((state) => state.hoveredLine);
   const hoveredElement = useHoverStore((state) => state.hoveredElement);
   const pinnedElements = useHoverStore((state) => state.pinnedElements);
-  const togglePinElement = useHoverStore((state) => state.togglePinElement);
 
   const { currentSceneIndex } = useVizStore();
   const currentScene = scenes[currentSceneIndex];
   const highlightedLines = currentScene.highlightLines;
-  const highlightedVars = currentScene.highlightedVars || [];
 
   const code = fullPythonCode;
   
