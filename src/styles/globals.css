@@ -100,4 +100,22 @@
     /* 将背景置于文本下方 */
     z-index: -1; 
   }
+
+  /* 新增：解释区被钉住元素的高亮样式 */
+  .explanation-pinned-highlight {
+    /* 可以选择与 hover 高亮不同的样式，例如更强的背景色、边框或下划线 */
+    background-color: theme('colors.blue.200 / 50%'); /* 例如，使用蓝色背景 */
+    border-bottom: 2px dashed theme('colors.blue.500'); /* 添加虚线下划线 */
+    font-weight: bold; /* 加粗字体 */
+  }
+
+  /* 新增：图表区被钉住元素的高亮样式 */
+  .var-pinned-highlight {
+     /* 可以选择与悬停高亮不同的样式 */
+     background-color: theme('colors.blue.200 / 50%'); /* 例如，与解释区钉住高亮使用相同的背景 */
+     border: 2px solid theme('colors.blue.500'); /* 添加实线边框 */
+     /* 也可以考虑添加一个小的图钉图标 */
+  }
+
+  /* TODO: Add pinned highlight style for CodeMirror elements */
 }

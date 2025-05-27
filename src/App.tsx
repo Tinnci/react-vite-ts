@@ -57,10 +57,12 @@ function App() {
         if (currentSceneIndex > 0) {
           gotoScene(currentSceneIndex - 1);
         }
-      } else if (window.innerWidth < 768 && (e.key === 'Tab')) {
-        e.preventDefault();
-        setTab(tab === 'visual' ? 'explanation' : 'visual');
       }
+      // 移除对 Tab 键的特殊处理，交给 CodeMirror
+      // else if (window.innerWidth < 768 && (e.key === 'Tab')) {
+      //   e.preventDefault();
+      //   setTab(tab === 'visual' ? 'explanation' : 'visual');
+      // }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -89,7 +91,9 @@ function App() {
   const currentScene = scenes[currentSceneIndex];
 
   useEffect(() => {
-    analyzeCode(fullPythonCode);
+    // 移除这里的 analyzeCode 调用，analyzeCode 应该在 vizStore 的 transformState 中根据需要触发
+    // 或者有一个专门的 effect 来监听代码变化并触发分析
+    // analyzeCode(fullPythonCode);
   }, [analyzeCode]);
 
   useEffect(() => {
@@ -137,7 +141,8 @@ function App() {
       <div className="content-grid grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="code-panel panel-card p-6">
           <h2 className="panel-title">Python 代码 {isAnalyzing && '(分析中...)'}</h2>
-          <CodePanel code={fullPythonCode} highlightedLines={currentScene.highlightLines} />
+          {/* 移除 code 和 highlightedLines 属性 */}
+          <CodePanel />
         </div>
         <motion.div layout transition={{ duration: 0.5, type: 'spring' }} className="right-panel flex flex-col gap-6">
           <ResponsiveTabs tab={tab} setTab={setTab} />
@@ -154,6 +159,7 @@ function App() {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.3 }}
                   >
+                    {/* 这里的 highlightedVars 也需要调整，但 ClassDiagram 组件可能仍需要它来高亮类或变量 */}
                     <ClassDiagram className="Device" vars={Device} highlightedVars={currentScene.highlightedVars || []} />
                   </motion.div>
                 )}
