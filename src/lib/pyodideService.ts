@@ -7,6 +7,7 @@ export interface CodeLocation {
   col_offset: number;
   end_lineno: number;
   end_col_offset: number;
+  type?: 'variable' | 'class' | 'function' | 'class_def' | 'instance' | 'function_def' | 'call';
 }
 export type VariableLocations = Record<string, CodeLocation[]>;
 

@@ -6,6 +6,7 @@ import { useHoverStore } from '@/lib/hoverStore';
 import { useCodeAnalysisStore } from '@/lib/codeAnalysisStore';
 import type { VariableLocations } from '@/lib/pyodideService';
 import { Panel } from './ui/Panel';
+import { cn } from '@/lib/utils';
 
 // Prism Token 类型声明
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,6 +16,7 @@ interface PrismToken {
 }
 
 // 工具函数：判断某 token 是否与当前悬停元素匹配
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isHoveredElement(lineNumber: number, colStart: number, colEnd: number, locations: VariableLocations, hoveredElement: any): boolean {
   if (!hoveredElement) return false;
   const { type, name } = hoveredElement;
@@ -23,8 +25,14 @@ function isHoveredElement(lineNumber: number, colStart: number, colEnd: number, 
   if (!elementLocations) return false;
 
   return elementLocations.some((loc: any) => {
-    // 检查类型是否匹配
-    if (loc.type !== type) return false;
+    // 检查类型是否匹配，如果 hoveredElement 类型是 'function' 或 'class'，
+    // 需要同时检查 loc.type 是否为 'function_def', 'class_def', 'call', 'instance'
+    let typeMatch = false;
+    if (type === 'variable' && loc.type === 'variable') typeMatch = true;
+    if (type === 'function' && (loc.type === 'function_def' || loc.type === 'call')) typeMatch = true;
+    if (type === 'class' && (loc.type === 'class_def' || loc.type === 'instance')) typeMatch = true;
+
+    if (!typeMatch) return false;
 
     // 检查位置是否重叠
     return (
@@ -47,6 +55,48 @@ function renderToken(
     // 对于字符串类型的token，如果它是变量、函数或类名，也需要处理悬停
     // 这部分逻辑比较复杂，可能需要更高级的文本分析或依赖Pyodide的更详细输出
     // 暂时跳过对纯字符串token的悬停处理
+    // 优化：回退检查，如果纯字符串token的内容在 locations 中存在，尝试匹配
+    const tokenText = token;
+    let colEnd = colStart + tokenText.length;
+    
+    // 检查是否与当前悬停元素匹配（回退检查）
+    const isHighlighted = isHoveredElement(lineNumber, colStart, colEnd, locations, hoveredElement);
+
+    // TODO: 更精确地处理纯字符串token的类型判断和位置匹配
+    // 目前的 isHoveredElement 依赖于 token 的类型，对于纯字符串 token 需要额外的判断逻辑
+    // 暂时只根据 locations 中是否存在该名称进行简单的悬停处理
+    const elementLocations = locations[tokenText];
+    const isPossibleElement = elementLocations && elementLocations.some(loc => loc.lineno === lineNumber && loc.col_offset >= colStart && loc.end_col_offset <= colEnd);
+
+    if (isPossibleElement) {
+        return (
+            <span
+                className={isHighlighted ? 'var-highlight' : ''}
+                onMouseEnter={() => {
+                     // 尝试从 locations 中找到更具体的类型信息
+                    const loc = elementLocations.find(loc => loc.lineno === lineNumber && loc.col_offset >= colStart && loc.end_col_offset <= colEnd);
+                    let type: 'variable' | 'function' | 'class' | undefined;
+                    if (loc) {
+                        if (loc.type === 'variable') type = 'variable';
+                        else if (loc.type === 'function_def' || loc.type === 'call') type = 'function';
+                        else if (loc.type === 'class_def' || loc.type === 'instance') type = 'class';
+                    }
+
+                    if (type) {
+                        setHoveredElement({ type, name: tokenText });
+                    } else {
+                         // 如果找不到具体类型，或者类型不支持，则不设置悬停元素
+                         setHoveredElement(null);
+                    }
+                }}
+                onMouseLeave={() => setHoveredElement(null)}
+                style={{ cursor: 'pointer' }}
+            >
+                {tokenText}
+            </span>
+        );
+    }
+
     return token;
   }
   if (Array.isArray(token)) {
@@ -69,7 +119,7 @@ function renderToken(
   // 变量名、函数名、类名等高亮和事件处理
   if (
     token.type === 'variable' ||
-    token.type === 'function' ||
+    token.type === 'function' || // Prismjs function token may include builtin
     token.type === 'class-name' ||
     token.type === 'builtin'
   ) {
@@ -82,7 +132,11 @@ function renderToken(
         className={isHighlighted ? 'var-highlight' : ''}
         onMouseEnter={() => {
           let type: 'variable' | 'function' | 'class' | undefined;
+          // 更精确地根据 Prism token type 映射到我们的类型
           if (token.type === 'variable') type = 'variable';
+          // Prism function token can be both function def and call, 
+          // but here it's likely def or call, we can rely on locations for precision if needed later.
+          // For now, map both 'function' and 'builtin' to 'function'
           else if (token.type === 'function' || token.type === 'builtin') type = 'function';
           else if (token.type === 'class-name') type = 'class';
 
@@ -204,13 +258,23 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines, explanati
               <tr
                 key={lineNumber}
                 ref={el => (lineRefs.current[idx] = el)}
-                className={`code-line ${highlight ? 'interactive-highlight' : ''}`}
+                className={cn(
+                  'code-line',
+                  highlight ? 'is-highlighted' : '',
+                )}
                 style={{ position: 'relative', transition: 'background 0.2s, color 0.2s' }}
                 onMouseEnter={explanation ? handleEnter : undefined}
                 onMouseLeave={explanation ? handleLeave : undefined}
               >
                 <td style={{ userSelect: 'none', textAlign: 'right', paddingRight: 8, color: '#aaa', width: 1 }}>
-                  {lineNumber}
+                  <div className={cn(
+                    'flex relative',
+                    { 'is-highlighted': lineNumber === hoveredLine }
+                  )}>
+                    <span className="w-10 text-right pr-4 text-gray-400 select-none shrink-0">
+                      {lineNumber}
+                    </span>
+                  </div>
                 </td>
                 <td style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', paddingRight: '1rem', position: 'relative' }}>
                   {renderToken(tokens, lineNumber, 0, locations, setHoveredElement, hoveredElement)}

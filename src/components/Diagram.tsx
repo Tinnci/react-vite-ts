@@ -13,8 +13,8 @@ interface DiagramProps {
 }
 
 const Diagram: React.FC<DiagramProps> = ({ title, varTypeLabel, vars, highlightedVars = [], className = '', layoutIdPrefix = '', inheritsFrom }) => {
-  const hoveredVar = useHoverStore((state) => state.hoveredVar);
-  const setHoveredVar = useHoverStore((state) => state.setHoveredVar);
+  const hoveredElement = useHoverStore((state) => state.hoveredElement);
+  const setHoveredElement = useHoverStore((state) => state.setHoveredElement);
   return (
     <div className={`namespace-box bg-panel-bg text-foreground border border-panel-border rounded-lg mb-4 min-w-0 ${className}`}>
       <h3 className="panel-subtitle">
@@ -24,9 +24,12 @@ const Diagram: React.FC<DiagramProps> = ({ title, varTypeLabel, vars, highlighte
         <motion.div
           key={name}
           layoutId={`${layoutIdPrefix}${name}`}
-          className={`var mb-1 font-mono text-sm ${(highlightedVars.includes(name) || hoveredVar === name) ? 'var-highlight' : ''}`}
-          onMouseEnter={() => setHoveredVar(name)}
-          onMouseLeave={() => setHoveredVar(null)}
+          className={`var mb-1 font-mono text-sm ${(
+            highlightedVars.includes(name) ||
+            (hoveredElement && hoveredElement.type === 'variable' && hoveredElement.name === name)
+          ) ? 'var-highlight' : ''}`}
+          onMouseEnter={() => setHoveredElement({ type: 'variable', name: name })}
+          onMouseLeave={() => setHoveredElement(null)}
         >
           <span className="var-blue">{name}:</span>{' '}
           <span className="var-red">{JSON.stringify(value)}</span>{' '}
