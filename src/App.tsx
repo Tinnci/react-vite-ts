@@ -13,6 +13,7 @@ import SceneOutline from '@/components/SceneOutline';
 import StepControls from '@/components/StepControls';
 import ResponsiveTabs from '@/components/ResponsiveTabs';
 import { useCodeAnalysisStore } from '@/lib/codeAnalysisStore';
+import { fullPythonCode } from './constants/pythonCode';
 
 function App() {
   // 替换 useReducer
@@ -140,8 +141,7 @@ function App() {
       <div className="content-grid grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="code-panel panel-card p-6">
           <h2 className="panel-title">Python 代码 {isAnalyzing && '(分析中...)'}</h2>
-          {/* 移除 code 和 highlightedLines 属性 */}
-          <CodePanel />
+          <CodePanel pythonCode={fullPythonCode} />
         </div>
         <motion.div layout transition={{ duration: 0.5, type: 'spring' }} className="right-panel flex flex-col gap-6">
           <ResponsiveTabs tab={tab} setTab={setTab} />

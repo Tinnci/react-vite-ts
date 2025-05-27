@@ -4,22 +4,31 @@ import { python } from '@codemirror/lang-python';
 import { githubDark } from '@uiw/codemirror-theme-github';
 import { useVizStore } from '../state/vizStore';
 import { fullPythonCode } from '../constants/pythonCode';
-import { hideTagsExtension } from '../lib/hideTagsExtension';
-import { highlightStateField, highlightExtension } from '../lib/highlightExtension';
+import { customHighlightExtension } from '../lib/customHighlightExtension';
 import { scenes } from '../constants/scenes';
+import CodeMirror from '@uiw/react-codemirror';
+import { EditorView } from '@codemirror/view';
+import { useThemeStore } from '../lib/themeStore';
 
-const CodePanel: React.FC = () => {
+interface CodePanelProps {
+    pythonCode: string;
+}
+
+const CodePanel: React.FC<CodePanelProps> = ({ pythonCode }) => {
+    const { theme } = useThemeStore();
     const { currentSceneIndex } = useVizStore();
     const scene = scenes[currentSceneIndex];
+    const highlightTag = scenes[currentSceneIndex]?.highlightTag || '';
 
-    const extensions = useMemo(
-        () => [
+    const extensions = useMemo(() => {
+        const exts = [
             python(),
-            hideTagsExtension(),
-            highlightStateField,
-        ],
-        []
-    );
+            EditorView.lineWrapping,
+            EditorView.editable.of(false),
+            customHighlightExtension(highlightTag),
+        ];
+        return exts;
+    }, [highlightTag, theme]);
 
     const { setContainer, view } = useCodeMirror({
         container: null,
@@ -37,7 +46,7 @@ const CodePanel: React.FC = () => {
 
     useEffect(() => {
         if (view && scene) {
-            highlightExtension(view, scene.highlightTag);
+            customHighlightExtension(scene.highlightTag || '');
         }
     }, [view, scene]);
 
