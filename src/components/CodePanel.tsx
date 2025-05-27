@@ -6,6 +6,7 @@ import python from 'react-syntax-highlighter/dist/esm/languages/hljs/python';
 import { atomOneDark, atomOneLight } from 'react-syntax-highlighter/dist/esm/styles/hljs'; // 支持亮/暗主题
 import { useHoverStore } from '@/lib/hoverStore';
 import { useThemeStore } from '@/lib/themeStore';
+import { useCodeAnalysisStore } from '@/lib/codeAnalysisStore';
 
 SyntaxHighlighter.registerLanguage('python', python);
 
@@ -18,6 +19,10 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
   const hoveredLine = useHoverStore((state) => state.hoveredLine);
   const hoveredVar = useHoverStore((state) => state.hoveredVar);
   const theme = useThemeStore((state) => state.theme);
+  const locations = useCodeAnalysisStore((state) => state.locations);
+
+  // 获取当前 hover 变量的所有出现行号
+  const linesToHighlightForVar = hoveredVar ? locations.get(hoveredVar)?.map(loc => loc.lineno) || [] : [];
 
   return (
     <div className="bg-panel-bg text-foreground min-h-[200px] md:min-h-[400px]">
@@ -30,17 +35,12 @@ const CodePanel: React.FC<CodePanelProps> = ({ code, highlightedLines }) => {
         customStyle={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', background: 'transparent', color: 'inherit' }}
         lineProps={lineNumber => {
           const style: React.CSSProperties = {};
-          // 变量名 hover 高亮支持
-          let highlight = highlightedLines.includes(lineNumber) || hoveredLine === lineNumber;
-          if (hoveredVar) {
-            // 精确匹配变量名（单词边界）
-            const codeLines = code.split('\n');
-            const lineText = codeLines[lineNumber - 1] || '';
-            const pattern = new RegExp(`\\b${hoveredVar}\\b`);
-            if (pattern.test(lineText)) highlight = true;
-          }
+          const isSceneHighlight = highlightedLines.includes(lineNumber);
+          const isVarHighlight = linesToHighlightForVar.includes(lineNumber);
+          const isExplanationHighlight = hoveredLine === lineNumber;
+          const highlight = isSceneHighlight || isVarHighlight || isExplanationHighlight;
           if (highlight) {
-            style.background = hoveredLine === lineNumber
+            style.background = isExplanationHighlight
               ? 'rgb(var(--highlight-bg))'
               : 'rgba(var(--highlight-bg), 0.5)';
             style.borderLeft = '4px solid rgb(var(--highlight-border))';

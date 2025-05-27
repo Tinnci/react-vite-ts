@@ -13,6 +13,7 @@ import ProgressBar from '@/components/ProgressBar';
 import SceneOutline from '@/components/SceneOutline';
 import StepControls from '@/components/StepControls';
 import ResponsiveTabs from '@/components/ResponsiveTabs';
+import { useCodeAnalysisStore } from '@/lib/codeAnalysisStore';
 
 function App() {
   const [vizState, dispatch] = useReducer(vizReducer, initialVizState);
@@ -20,6 +21,8 @@ function App() {
   const [tab, setTab] = useState<'visual' | 'explanation'>('visual');
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
+  const analyzeCode = useCodeAnalysisStore((state) => state.analyzeCode);
+  const isAnalyzing = useCodeAnalysisStore((state) => state.isLoading);
 
   // 监听 theme，自动为 <body> 添加/移除 dark 类
   useEffect(() => {
@@ -74,6 +77,14 @@ function App() {
 
   const currentScene = scenes[currentSceneIndex];
 
+  useEffect(() => {
+    analyzeCode(fullPythonCode);
+  }, [analyzeCode]);
+
+  useEffect(() => {
+    console.log('[App] isAnalyzing', isAnalyzing);
+  }, [isAnalyzing]);
+
   return (
     <div className="container mx-auto p-8 bg-background text-foreground rounded-lg shadow-lg">
       <div className="header text-center mb-6 flex flex-col items-center gap-2">
@@ -105,7 +116,7 @@ function App() {
 
       <div className="content-grid grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="code-panel panel-card p-6">
-          <h2 className="panel-title">Python 代码</h2>
+          <h2 className="panel-title">Python 代码 {isAnalyzing && '(分析中...)'}</h2>
           <CodePanel code={fullPythonCode} highlightedLines={currentScene.highlightLines} />
         </div>
         <motion.div layout transition={{ duration: 0.5, type: 'spring' }} className="right-panel flex flex-col gap-6">
