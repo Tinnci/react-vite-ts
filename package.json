@@ -13,13 +13,14 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^1.2.1",
     "framer-motion": "^12.14.0",
+    "prismjs": "^1.30.0",
     "pyodide": "^0.27.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-syntax-highlighter": "^15.6.1",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
+    "@types/prismjs": "^1.26.5",
     "@types/react": "^18.3.22",
     "@types/react-dom": "^18.3.7",
     "@types/react-syntax-highlighter": "^15.5.13",
