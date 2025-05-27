@@ -323,28 +323,9 @@ export const scenes: Scene[] = [
     },
   },
   {
-    title: '子类修改类变量',
-    highlightLines: [72, 73],
-    explanation: [
-      { type: 'text', content: '修改子类 ' },
-      { type: 'hover', content: '<code>SmartDevice</code>' },
-      { type: 'text', content: ' 的类变量 ' },
-      { type: 'hover', content: '<code>software_version</code>', var: 'software_version' },
-      { type: 'text', content: '。<br>这只影响 ' },
-      { type: 'hover', content: '<code>SmartDevice</code>' },
-      { type: 'text', content: ' 类及其未来的实例（或现有未覆盖此变量的实例）。不影响父类 ' },
-      { type: 'hover', content: '<code>Device</code>' },
-      { type: 'text', content: '。' },
-    ],
-    getOutput: (state) => {
-      const smartDeviceSoftwareVersion = state.SmartDevice?.software_version ?? 'N/A';
-      return `SmartDevice.software_version: ${smartDeviceSoftwareVersion}`;
-    },
-    transformState: (prev) => prev,
-  },
-  {
-    title: '子类遮蔽继承类变量',
-    highlightLines: [75, 76, 77],
+    title: '子类修改继承的类变量',
+    highlightLines: [65, 67],
+    highlightedVars: ['status'],
     explanation: [
       { type: 'text', content: '修改 ' },
       { type: 'hover', content: '<code>SmartDevice.status</code>', var: 'status' },
@@ -375,7 +356,7 @@ export const scenes: Scene[] = [
   },
   {
     title: '打印所有对象信息',
-    highlightLines: [80, 81, 82, 83, 84, 85, 86, 87],
+    highlightLines: [71, 72, 73, 74, 75],
     explanation: [
       { type: 'text', content: '最后，我们打印所有对象的信息来回顾它们当前的状态。' },
     ],
